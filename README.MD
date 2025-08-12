@@ -2,7 +2,9 @@
 
 ## Overview
 You are tasked with building a simplified trading and margining service for a derivatives platform.  
+
 You will trade a single perpetual future `BTC-PERP` in `USDT` (margin).   
+
 The system will:
 
 1. **Perform pre-trade checks** for:
@@ -20,6 +22,8 @@ This is a simplified model of a real trading system — keep it clean, well-stru
 **Key Difference from Typical CRUD:**  
 All *current state* (balances, positions, mark prices) should be stored in **Redis** for fast updates and reads.  
 **Postgres** should be used for **history only** (immutable trade log, liquidation log).
+
+This task should take around **2-3 hours** to complete.
 
 ## Margin Requirements
 
