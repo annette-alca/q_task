@@ -2,6 +2,7 @@
 
 ## Overview
 You are tasked with building a simplified trading and margining service for a derivatives platform.  
+You will trade a single perpetual future `BTC-PERP` in `USDT` (margin).   
 The system will:
 
 1. **Perform pre-trade checks** for:
@@ -26,10 +27,12 @@ For this simplified system:
 
 - **Initial Margin Requirement**: **20%** of the notional value of the position
 - **Maintenance Margin Requirement**: **10%** of the notional value of the position
+- **Equity (USDT)** = `cash balance + sum(positions pnl)`
 
 Definitions:
 - **Initial Margin**: The minimum amount of equity required to open a position.
 - **Maintenance Margin**: The minimum amount of equity that must be maintained to keep the position open.
+- **Equity**: The total value of the account, including cash and unrealized P&L from positions.
 
 **Notes**:
 - Pre-trade checks should ensure the account has at least the initial margin available **before** opening or increasing a position.
@@ -60,8 +63,7 @@ Definitions:
    - Store current mark price per symbol in Redis.
    - Use mark price to calculate Unrealized P&L.
 4. **Margin Utilisation**
-   - `margin_utilisation = used_margin / equity`
-   - Identify accounts with margin utilisation > 100% as liquidation candidates.
+   - Identify accounts with equity < maintenance margin as liquidation candidates.
    - Record liquidation events in Postgres `liquidations` table.
 5. **APIs**
    - `POST /trade` → Executes trade (pre-check, update Redis, persist to Postgres history)
