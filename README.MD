@@ -104,8 +104,8 @@ Definitions:
 ## Starter Provided
 - FastAPI project scaffold
 - Docker Compose with Redis + Postgres
-- Example SQLAlchemy models for history tables
-- Redis helper for common operations
+- Async Redis helper for common operations
+- Async Postgres helper for common operations
 
 ---
 
