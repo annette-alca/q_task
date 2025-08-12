@@ -70,7 +70,9 @@ Definitions:
    - `GET /positions/{account_id}` → Returns current positions & P&L from Redis
    - `POST /mark-price` → Updates mark price in Redis
    - `GET /margin-report` → Returns margin utilisation for all accounts from Redis & list of liquidation candidates
-
+6. **Async Operations**
+   - Use async Redis and Postgres clients for non-blocking operations.
+   - Ensure all database operations are performed asynchronously.
 ---
 
 
