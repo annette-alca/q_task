@@ -141,6 +141,7 @@ q_test2/
 │   ├── test_margin_service.py
 │   ├── test_redis_clients.py
 │   └── test_config.py
+├── test_integration.py      # End-to-end integration test with real databases
 ├── docker-compose.yaml      # Redis + PostgreSQL services
 ├── init.sql                 # Database schema initialization
 ├── env.example              # Environment variables template
