@@ -38,7 +38,7 @@ mark_prices -> hash: {symbol: price}
 - `POST /trade` - Execute trades with margin checks
 - `GET /positions/{account_id}` - Get positions and P&L
 - `POST /mark-price` - Update mark prices
-- `GET /margin-report` - Margin utilization report
+- `GET /margin-report` - Margin utilisation report
 - `GET /trades/{account_id}` - Get trade history using Trade models
 - `GET /liquidations` - Get liquidation history using Liquidation models
 
