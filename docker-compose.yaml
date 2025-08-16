@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: trading
     ports:
-      - "5432:5432"
+      - "5433:5432" # changed because local port 5432 is already in use
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
