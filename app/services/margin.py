@@ -45,15 +45,11 @@ class MarginService:
         
         return total_maintenance
 
-    def calculate_margin_utilisation(self, equity: Decimal, maintenance_required: Decimal) -> Decimal:
-        """Calculate margin utilisation percentage (pure function)"""
-        return (maintenance_required / equity * 100) if equity > 0 else Decimal('100')
-
     def is_liquidation_candidate(self, equity: Decimal, maintenance_required: Decimal) -> bool:
         """Check if account should be liquidated (pure function)"""
         return equity < maintenance_required
 
-    async def _record_liquidation_in_postgres(self, account_id: int, equity: Decimal, maintenance_margin: Decimal, reason: str):
+    async def record_liquidation(self, account_id: int, equity: Decimal, maintenance_margin: Decimal, reason: str):
         """Record liquidation event in PostgreSQL"""
         liquidation = Liquidation(
             account_id=account_id,
@@ -84,36 +80,18 @@ class MarginService:
             """
             return await self.postgres_client.fetch_models(Liquidation, query, limit)
 
-    async def get_margin_utilisation(self) -> Dict[str, Any]:
-        """Get margin utilisation for all accounts"""
+    async def check_all_accounts_for_liquidation(self) -> List[int]:
+        """Check all accounts and return list of accounts needing liquidation"""
         all_accounts = await self.account_client.get_all_accounts()
         liquidation_candidates = []
-        accounts_detail = []
         
         for account_id in all_accounts:
             equity = await self.calculate_account_equity(account_id)
             maintenance_required = await self.calculate_maintenance_margin_required(account_id)
-            utilisation = self.calculate_margin_utilisation(equity, maintenance_required)
-            is_liquidation = self.is_liquidation_candidate(equity, maintenance_required)
             
-            account_detail = {
-                "account_id": account_id,
-                "equity": float(equity),
-                "maintenance_margin_required": float(maintenance_required),
-                "margin_utilisation_pct": float(utilisation),
-                "liquidation_risk": is_liquidation
-            }
-            
-            accounts_detail.append(account_detail)
-            
-            # Handle liquidation
-            if is_liquidation:
+            if self.is_liquidation_candidate(equity, maintenance_required):
                 liquidation_candidates.append(account_id)
                 reason = f"Equity ({equity}) below maintenance margin ({maintenance_required})"
-                await self._record_liquidation_in_postgres(account_id, equity, maintenance_required, reason)
+                await self.record_liquidation(account_id, equity, maintenance_required, reason)
 
-        return {
-            "total_accounts": len(all_accounts),
-            "liquidation_candidates": liquidation_candidates,
-            "accounts_detail": accounts_detail
-        }
+        return liquidation_candidates
