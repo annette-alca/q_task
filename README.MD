@@ -1,8 +1,7 @@
  Production-minded async derivatives trading platform built with FastAPI, Redis, and PostgreSQL.
 
-This system was built based on [these instructions](instructions.md).
+This system was built following [these instructions](instructions.md).
 
- This was 
 
 ## Features
 
