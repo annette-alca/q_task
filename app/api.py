@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any
 from .services.trading import TradingService
 from .services.margin import MarginService
 from .redis_client import MarketRedisClient
+from .models import Trade, Liquidation
 from decimal import Decimal
 
 router = APIRouter()
@@ -140,5 +141,29 @@ async def margin_report():
             accounts_detail=report_data["accounts_detail"]
         )
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/trades/{account_id}")
+async def get_trade_history(account_id: int, limit: int = 100):
+    """Get trade history for an account"""
+    if not trading_service:
+        raise HTTPException(status_code=500, detail="Trading service not initialised")
+    
+    try:
+        trades = await trading_service.get_trade_history(account_id, limit)
+        return {"trades": [trade.dict() for trade in trades]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/liquidations")
+async def get_liquidation_history(account_id: Optional[int] = None, limit: int = 100):
+    """Get liquidation history, optionally filtered by account"""
+    if not margin_service:
+        raise HTTPException(status_code=500, detail="Margin service not initialised")
+    
+    try:
+        liquidations = await margin_service.get_liquidation_history(account_id, limit)
+        return {"liquidations": [liquidation.dict() for liquidation in liquidations]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

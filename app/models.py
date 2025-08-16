@@ -11,15 +11,18 @@ class Trade(BaseModel):
     side: str  # "BUY" or "SELL"
     quantity: float
     price: float
-    timestamp: datetime = datetime.utcnow()
+    notional: float
+    timestamp: Optional[datetime] = None
 
 
 class Liquidation(BaseModel):
     """Model for liquidation events stored in Postgres"""
     id: Optional[int] = None
     account_id: int
+    equity: float
+    maintenance_margin: float
     reason: str
-    timestamp: datetime = datetime.utcnow()
+    timestamp: Optional[datetime] = None
 
 
 # SQL table creation queries
@@ -31,6 +34,7 @@ CREATE TABLE IF NOT EXISTS trades (
     side VARCHAR(4) NOT NULL,
     quantity DECIMAL(20, 8) NOT NULL,
     price DECIMAL(20, 8) NOT NULL,
+    notional DECIMAL(20, 8) NOT NULL,
     timestamp TIMESTAMP NOT NULL DEFAULT NOW()
 );
 """
@@ -39,7 +43,9 @@ LIQUIDATIONS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS liquidations (
     id SERIAL PRIMARY KEY,
     account_id INTEGER NOT NULL,
-    reason TEXT NOT NULL,
-    timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+    equity DECIMAL(20, 8) NOT NULL,
+    maintenance_margin DECIMAL(20, 8) NOT NULL,
+    reason TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """

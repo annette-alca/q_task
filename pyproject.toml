@@ -1,20 +1,25 @@
-[project]
+[tool.poetry]
 name = "python-trading-task"
-version = "0.1.0"
-description = ""
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
+version = "0.1.1"
+description = "A production-ready async derivatives trading platform built with FastAPI, Redis, and PostgreSQL"
+authors = ["Annette <you@example.com>"]
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "redis (>=6.4.0,<7.0.0)",
-    "asyncpg (>=0.30.0,<0.31.0)",
-    "fastapi (>=0.116.1,<0.117.0)",
-    "pydantic (>=2.11.7,<3.0.0)"
-]
+packages = [{include = "app"}]
 
+[tool.poetry.dependencies]
+python = "^3.11"
+redis = "^6.4.0"
+asyncpg = "^0.30.0"
+fastapi = "^0.116.1"
+pydantic = "^2.11.7"
+uvicorn = "^0.24.0"
+python-dotenv = "^1.0.0"
+httpx = "^0.25.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-asyncio = "^0.21.0"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

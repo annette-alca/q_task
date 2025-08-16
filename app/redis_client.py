@@ -6,9 +6,11 @@ from abc import ABC
 class BaseRedisClient(ABC):
     """Base Redis client with core connection functionality"""
     
-    def __init__(self, host: str = "localhost", port: int = 6379):
+    def __init__(self, host: str = "localhost", port: int = 6379, password: Optional[str] = None, db: int = 0):
         self._host = host
         self._port = port
+        self._password = password
+        self._db = db
         self._conn: Optional[aioredis.Redis] = None
 
     async def connect(self):
@@ -16,6 +18,8 @@ class BaseRedisClient(ABC):
             self._conn = aioredis.Redis(
                 host=self._host,
                 port=self._port,
+                password=self._password,
+                db=self._db,
                 decode_responses=True
             )
 

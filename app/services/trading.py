@@ -1,7 +1,8 @@
 from decimal import Decimal
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 from ..redis_client import AccountRedisClient, MarketRedisClient
 from ..postgres import AsyncPostgresClient
+from ..models import Trade
 
 class TradingService:
     def __init__(self, account_client: AccountRedisClient, market_client: MarketRedisClient, postgres_client: AsyncPostgresClient):
@@ -90,15 +91,23 @@ class TradingService:
 
     async def _record_trade_in_postgres(self, account_id: int, symbol: str, side: str, quantity: Decimal, price: Decimal, notional: Decimal) -> int:
         """Record trade in PostgreSQL and return trade ID"""
-        query = """
-            INSERT INTO trades (account_id, symbol, side, quantity, price, notional, timestamp)
-            VALUES ($1, $2, $3, $4, $5, $6, NOW())
-            RETURNING id
-        """
-        return await self.postgres_client.fetchval(query, account_id, symbol, side.upper(), quantity, price, notional)
+        trade = Trade(
+            account_id=account_id,
+            symbol=symbol,
+            side=side.upper(),
+            quantity=float(quantity),
+            price=float(price),
+            notional=float(notional)
+        )
+        
+        return await self.postgres_client.insert_model(trade, "trades")
 
     async def execute_trade(self, account_id: int, symbol: str, side: str, quantity: Decimal, price: Decimal) -> Tuple[bool, str, Optional[int]]:
         """Execute a trade after pre-trade checks"""
+        # Validate quantity for BTC trades (must be whole numbers)
+        if symbol == "BTC-PERP" and quantity % 1 != 0:
+            return False, "BTC trades must be in whole numbers (no fractional BTC)", None
+        
         # Pre-trade check
         check_passed, message = await self.pre_trade_check(account_id, side, quantity, price)
         if not check_passed:
@@ -161,3 +170,14 @@ class TradingService:
             "equity": equity,
             "positions": positions
         }
+
+    async def get_trade_history(self, account_id: int, limit: int = 100) -> List[Trade]:
+        """Get trade history for an account"""
+        query = """
+            SELECT id, account_id, symbol, side, quantity, price, notional, timestamp
+            FROM trades 
+            WHERE account_id = $1 
+            ORDER BY timestamp DESC 
+            LIMIT $2
+        """
+        return await self.postgres_client.fetch_models(Trade, query, account_id, limit)
