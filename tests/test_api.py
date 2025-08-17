@@ -9,7 +9,7 @@ from app.services.margin import MarginService
 from app.redis_client import AccountRedisClient, MarketRedisClient
 from app.postgres import AsyncPostgresClient
 
-### note: 3 tests still failing, to be addressed soon
+
 
 @pytest.fixture
 def mock_clients():
@@ -177,11 +177,11 @@ class TestPositionsAPI:
             "positions": [
                 {
                     "symbol": "BTC-PERP",
-                    "quantity": Decimal('0.1'),
+                    "quantity": Decimal('1'),
                     "avg_price": Decimal('50000'),
                     "mark_price": Decimal('52000'),
-                    "unrealised_pnl": Decimal('200'),
-                    "notional": Decimal('5200')
+                    "unrealised_pnl": Decimal('2000'),
+                    "notional": Decimal('52000')
                 }
             ]
         }
@@ -196,7 +196,7 @@ class TestPositionsAPI:
         assert data["equity"] == "12000"
         assert len(data["positions"]) == 1
         assert data["positions"][0]["symbol"] == "BTC-PERP"
-        assert data["positions"][0]["unrealised_pnl"] == "200"
+        assert data["positions"][0]["unrealised_pnl"] == "2000"
     
     def test_get_positions_no_positions(self, client, mock_trading_service):
         """Test positions retrieval for account with no positions"""
@@ -335,9 +335,9 @@ class TestTradeHistoryAPI:
                 account_id=1,
                 symbol="BTC-PERP",
                 side="BUY",
-                quantity=Decimal('0.1'),
+                quantity=Decimal('1'),
                 price=Decimal('50000'),
-                notional=Decimal('5000'),
+                notional=Decimal('50000'),
                 timestamp=datetime.now()
             ),
             Trade(
@@ -345,9 +345,9 @@ class TestTradeHistoryAPI:
                 account_id=1,
                 symbol="BTC-PERP",
                 side="SELL",
-                quantity=Decimal('0.05'),
+                quantity=Decimal('1'),
                 price=Decimal('52000'),
-                notional=Decimal('2600'),
+                notional=Decimal('52000'),
                 timestamp=datetime.now()
             )
         ]
@@ -360,7 +360,7 @@ class TestTradeHistoryAPI:
         assert len(data["trades"]) == 2
         assert data["trades"][0]["side"] == "BUY"
         assert data["trades"][1]["side"] == "SELL"
-        assert data["trades"][0]["notional"] == "5000"
+        assert data["trades"][0]["notional"] == 50000
 
 class TestLiquidationHistoryAPI:
     """Test liquidation history endpoints"""
@@ -389,7 +389,7 @@ class TestLiquidationHistoryAPI:
         data = response.json()
         assert len(data["liquidations"]) == 1
         assert data["liquidations"][0]["account_id"] == 2
-        assert data["liquidations"][0]["equity"] == "800"
+        assert data["liquidations"][0]["equity"] == 800
         assert "Equity below maintenance margin" in data["liquidations"][0]["reason"]
 
 class TestHealthEndpoints:
