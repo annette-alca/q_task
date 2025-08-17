@@ -102,7 +102,7 @@ class AccountRedisClient(BaseRedisClient):
                 "quantity": Decimal('0'),
                 "avg_price": Decimal('0')
             }
-            
+
         quantity_str, avg_price_str = value.split(',')
         quantity = Decimal(quantity_str)
         avg_price = Decimal(avg_price_str)
