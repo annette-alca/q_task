@@ -163,7 +163,7 @@ async def get_trade_history(account_id: int, limit: int = 100):
     
     try:
         trades = await trading_service.get_trade_history(account_id, limit)
-        return {"trades": [trade.dict() for trade in trades]}
+        return {"trades": [trade.model_dump() for trade in trades]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -175,6 +175,6 @@ async def get_liquidation_history(account_id: Optional[int] = None, limit: int =
     
     try:
         liquidations = await margin_service.get_liquidation_history(account_id, limit)
-        return {"liquidations": [liquidation.dict() for liquidation in liquidations]}
+        return {"liquidations": [liquidation.model_dump() for liquidation in liquidations]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

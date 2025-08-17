@@ -58,20 +58,13 @@ class TradingService:
         """Perform pre-trade margin checks"""
         equity = await self.calculate_equity(account_id)
         
-    #     trade_quantity = quantity if side.upper() == "BUY" else -quantity
-    #     required_margin = self.calculate_initial_margin_required(trade_quantity, price)
-    #     current_maintenance = await self.calculate_maintenance_margin(account_id)
-        
-    #     total_required = required_margin + current_maintenance
-    #     if equity < total_required:
-    #         return False, f"Insufficient equity. Required: {total_required}, Available: {equity}"
-        
         trade_quantity = quantity if side.upper() == "BUY" else -quantity
-        required_initial_margin = self.calculate_initial_margin_required(trade_quantity, price)
+        required_margin = self.calculate_initial_margin_required(trade_quantity, price)
+        current_maintenance = await self.calculate_maintenance_margin(account_id)
         
-        # For initial margin check, we only need to ensure equity covers the new trade's margin
-        if equity < required_initial_margin:
-            return False, f"Insufficient equity. Required: {required_initial_margin}, Available: {equity}"
+        total_required = required_margin + current_maintenance
+        if equity < total_required:
+            return False, f"Insufficient equity. Required: {total_required}, Available: {equity}"
         
         return True, "Trade approved"
 
