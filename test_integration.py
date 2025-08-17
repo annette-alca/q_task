@@ -151,7 +151,7 @@ class TradingSystemIntegrationTest:
         print(f"   Position: {position}")
         
         # Verify PostgreSQL trade record
-        trade_record = await self.postgres_client.fetch_row(
+        trade_record = await self.postgres_client.fetchrow(
             "SELECT * FROM trades WHERE account_id = $1 ORDER BY id DESC LIMIT 1",
             3456
         )
@@ -372,7 +372,7 @@ class TradingSystemIntegrationTest:
             return False
         
         # Verify liquidation record in PostgreSQL
-        liquidation_record = await self.postgres_client.fetch_row(
+        liquidation_record = await self.postgres_client.fetchrow(
             "SELECT * FROM liquidations WHERE account_id = $1 ORDER BY id DESC LIMIT 1",
             3456
         )
