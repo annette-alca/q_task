@@ -137,6 +137,12 @@ class TradingService:
         new_balance = current_balance + balance_change
         await self.account_client.set_balance(account_id, new_balance)
 
+        # Update equity in Redis
+        await self.account_client.update_equity(account_id)
+
+        # Update used margin in Redis
+        await self.account_client.update_used_margin(account_id)
+
         # Record trade in PostgreSQL
         trade_id = await self._record_trade_in_postgres(account_id, symbol, side, quantity, price, notional)
 
