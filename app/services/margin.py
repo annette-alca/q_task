@@ -23,7 +23,7 @@ class MarginService:
                 
             mark_price = await self.market_client.get_mark_price(symbol)
             if mark_price:
-                pnl = (mark_price - position_data["entry_price"]) * position_data["quantity"]
+                pnl = (mark_price - position_data["avg_price"]) * position_data["quantity"]
                 total_pnl += pnl
         
         return balance + total_pnl

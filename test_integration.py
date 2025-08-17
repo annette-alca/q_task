@@ -190,7 +190,7 @@ class TradingSystemIntegrationTest:
                 print(f"   Position Details:")
                 print(f"     Symbol: {pos['symbol']}")
                 print(f"     Quantity: {pos['quantity']}")
-                print(f"     Entry Price: {pos['entry_price']}")
+                print(f"     Average Price: {pos['avg_price']}")
                 print(f"     Mark Price: {pos['mark_price']}")
                 print(f"     Unrealised P&L: {pos['unrealised_pnl']}")
                 print(f"     Notional: {pos['notional']}")

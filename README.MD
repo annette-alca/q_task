@@ -25,7 +25,7 @@ This system was built following [these instructions](instructions.md).
 ### AccountRedisClient
 ```
 balances -> hash: {account_id: balance}
-position:{account_id}:{symbol} -> hash: {quantity, entry_price}
+positions:{account_id} -> string: JSON with {symbol: {quantity, avg_price}}
 ```
 
 ### MarketRedisClient  

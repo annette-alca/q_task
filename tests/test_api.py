@@ -178,7 +178,7 @@ class TestPositionsAPI:
                 {
                     "symbol": "BTC-PERP",
                     "quantity": 0.1,
-                    "entry_price": 50000.0,
+                    "avg_price": 50000.0,
                     "mark_price": 52000.0,
                     "unrealised_pnl": 200.0,
                     "notional": 5200.0

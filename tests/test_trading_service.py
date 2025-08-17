@@ -14,7 +14,7 @@ def mock_clients():
 
 @pytest.fixture
 def mock_account():
-    """Mock account with £15,000 starting balance"""
+    """Mock account with USDT 15,000 starting balance"""
     return {
         'account_id': 1,
         'initial_balance': Decimal('15000'),
@@ -48,7 +48,7 @@ class TestTradingService:
         
         # Setup mocks
         account_client.get_all_positions.return_value = {
-            "BTC-PERP": {"quantity": Decimal('1'), "entry_price": Decimal('50000')}
+            "BTC-PERP": {"quantity": Decimal('1'), "avg_price": Decimal('50000')}
         }
         market_client.get_mark_price.return_value = Decimal('50000')
         
@@ -84,7 +84,7 @@ class TestTradingService:
         # Setup: Account holds 1 BTC bought at 50000, balance reduced to 5000
         account_client.get_balance.return_value = Decimal('5000')  # 15000 - 50000 notional + margin
         account_client.get_all_positions.return_value = {
-            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "entry_price": mock_account['btc_entry_price']}
+            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_entry_price']}
         }
         market_client.get_mark_price.return_value = Decimal('55000')  # BTC up 10%
         
@@ -102,7 +102,7 @@ class TestTradingService:
         # Setup: Account holds 1 BTC bought at 50000, balance 5000
         account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
-            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "entry_price": mock_account['btc_entry_price']}
+            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_entry_price']}
         }
         market_client.get_mark_price.return_value = Decimal('45000')  # BTC down 10%
         
@@ -120,7 +120,7 @@ class TestTradingService:
         # Setup: Account holds 1 BTC, BTC price fell, low equity
         account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
-            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "entry_price": mock_account['btc_entry_price']}
+            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_entry_price']}
         }
         market_client.get_mark_price.return_value = Decimal('45000')  # Current equity = 0
         
@@ -141,7 +141,7 @@ class TestTradingService:
         # Setup: Account holds 1 BTC, BTC price recovered, good equity
         account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
-            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "entry_price": mock_account['btc_entry_price']}
+            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_entry_price']}
         }
         market_client.get_mark_price.return_value = Decimal('60000')  # BTC up 20%
         
@@ -164,7 +164,7 @@ class TestTradingService:
         # Setup: Account holds 1 BTC, severe crash
         account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
-            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "entry_price": mock_account['btc_entry_price']}
+            "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_entry_price']}
         }
         market_client.get_mark_price.return_value = Decimal('40000')  # BTC down 20%
         

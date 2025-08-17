@@ -45,7 +45,7 @@ class TradeResponse(BaseModel):
 class Position(BaseModel):
     symbol: str
     quantity: float
-    entry_price: float
+    avg_price: float
     mark_price: float
     unrealised_pnl: float
     notional: float
@@ -96,7 +96,7 @@ async def get_positions(account_id: int):
             Position(
                 symbol=pos["symbol"],
                 quantity=float(pos["quantity"]),
-                entry_price=float(pos["entry_price"]),
+                avg_price=float(pos["avg_price"]),
                 mark_price=float(pos["mark_price"]),
                 unrealised_pnl=float(pos["unrealised_pnl"]),
                 notional=float(pos["notional"])
