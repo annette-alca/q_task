@@ -180,8 +180,8 @@ q_test2/
 ```python
 # No mocking needed
 def test_calculate_initial_margin():
-    result = service.calculate_initial_margin_required(Decimal('1'), Decimal('50000'))
-    assert result == Decimal('10000')
+            result = service.calculate_initial_margin_required(Decimal('1'), Decimal('50000'))
+        assert result == Decimal('10000')
 ```
 
 ### Async Functions (Mock Dependencies)
@@ -190,7 +190,7 @@ def test_calculate_initial_margin():
 @pytest.mark.asyncio
 async def test_calculate_equity(trading_service, mock_clients):
     # Mock the data access layer
-    account_client.get_balance.return_value = Decimal('10000')
+            account_client.get_balance.return_value = Decimal('10000')
     # Test the business logic
     equity = await trading_service.calculate_equity(1)
 ```

@@ -1,5 +1,5 @@
-import json
 import redis.asyncio as aioredis
+from decimal import Decimal
 from typing import Optional, Dict, Any, Tuple
 from abc import ABC
 
@@ -62,16 +62,16 @@ class BaseRedisClient(ABC):
 class AccountRedisClient(BaseRedisClient):
     """Redis client for account-related operations (balances, positions)"""
     
-    async def set_balance(self, account_id: int, balance: float):
+    async def set_balance(self, account_id: int, balance: Decimal):
         """Set account balance"""
         await self.hset("balances", str(account_id), str(balance))
 
-    async def get_balance(self, account_id: int) -> float:
+    async def get_balance(self, account_id: int) -> Decimal:
         """Get account balance"""
         balance_str = await self.hget("balances", str(account_id))
-        return float(balance_str) if balance_str else 0.0
+        return Decimal(balance_str) if balance_str else Decimal('0')
 
-    async def set_position(self, account_id: int, symbol: str, quantity: float, entry_price: float):
+    async def set_position(self, account_id: int, symbol: str, quantity: Decimal, entry_price: Decimal):
         """Set position for account and symbol"""
         key = f"positions:{account_id}"
         
@@ -85,12 +85,12 @@ class AccountRedisClient(BaseRedisClient):
         if new_quantity != 0:
             new_avg_price = (existing_qty * existing_avg_price + quantity * entry_price) / new_quantity
         else:
-            new_avg_price = 0.0
+            new_avg_price = Decimal('0')
         
         # Store position as tuple string "quantity,avg_price"
         await self.hset(key, symbol, f"{new_quantity},{new_avg_price}")
 
-    async def get_position(self, account_id: int, symbol: str) -> Optional[Dict[str, float]]:
+    async def get_position(self, account_id: int, symbol: str) -> Optional[Dict[str, Decimal]]:
         """Get position for account and symbol"""
         key = f"positions:{account_id}"
         
@@ -99,19 +99,19 @@ class AccountRedisClient(BaseRedisClient):
         
         if not value:
             return {
-                "quantity": 0.0,
-                "avg_price": 0.0
+                "quantity": Decimal('0'),
+                "avg_price": Decimal('0')
             }
             
         quantity_str, avg_price_str = value.split(',')
-        quantity = float(quantity_str)
-        avg_price = float(avg_price_str)
+        quantity = Decimal(quantity_str)
+        avg_price = Decimal(avg_price_str)
         return {
             "quantity": quantity,
             "avg_price": avg_price
         }
 
-    async def get_all_positions(self, account_id: int) -> Dict[str, Dict[str, float]]:
+    async def get_all_positions(self, account_id: int) -> Dict[str, Dict[str, Decimal]]:
         """Get all positions for an account"""
         key = f"positions:{account_id}"
         all_fields = await self.hgetall(key)
@@ -124,8 +124,8 @@ class AccountRedisClient(BaseRedisClient):
         
         for symbol, value in all_fields.items():
             quantity_str, avg_price_str = value.split(',')
-            quantity = float(quantity_str)
-            avg_price = float(avg_price_str)
+            quantity = Decimal(quantity_str)
+            avg_price = Decimal(avg_price_str)
             positions[symbol] = {
                 "quantity": quantity,
                 "avg_price": avg_price
@@ -144,9 +144,9 @@ class AccountRedisClient(BaseRedisClient):
         await self.account_client.set(f"account:{account_id}:equity", str(equity))
 
     # Get equity from Redis (as required)
-    async def get_equity_from_redis(self, account_id: int) -> float:
+    async def get_equity_from_redis(self, account_id: int) -> Decimal:
         equity_str = await self.account_client.get(f"account:{account_id}:equity")
-        return float(equity_str) if equity_str else 0.0
+        return Decimal(equity_str) if equity_str else Decimal('0')
 
     #Update used_margin in Redis:
     # Calculate and store used margin
@@ -155,24 +155,24 @@ class AccountRedisClient(BaseRedisClient):
         await self.account_client.set(f"account:{account_id}:used_margin", str(used_margin))
 
     # Get used margin from Redis
-    async def get_used_margin_from_redis(self, account_id: int) -> float:
+    async def get_used_margin_from_redis(self, account_id: int) -> Decimal:
         margin_str = await self.account_client.get(f"account:{account_id}:used_margin")
-        return float(margin_str) if margin_str else 0.0
+        return Decimal(margin_str) if margin_str else Decimal('0')
 
 
 class MarketRedisClient(BaseRedisClient):
     """Redis client for market-related operations (mark prices)"""
     
-    async def set_mark_price(self, symbol: str, price: float):
+    async def set_mark_price(self, symbol: str, price: Decimal):
         """Set mark price for symbol"""
         await self.hset("mark_prices", symbol, str(price))
 
-    async def get_mark_price(self, symbol: str) -> Optional[float]:
+    async def get_mark_price(self, symbol: str) -> Optional[Decimal]:
         """Get mark price for symbol"""
         price_str = await self.hget("mark_prices", symbol)
-        return float(price_str) if price_str else None
+        return Decimal(price_str) if price_str else None
 
-    async def get_all_mark_prices(self) -> Dict[str, float]:
+    async def get_all_mark_prices(self) -> Dict[str, Decimal]:
         """Get all mark prices"""
         prices_data = await self.hgetall("mark_prices")
-        return {symbol: float(price) for symbol, price in prices_data.items()}
+        return {symbol: Decimal(price) for symbol, price in prices_data.items()}

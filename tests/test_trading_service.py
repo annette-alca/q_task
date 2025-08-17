@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 
 from unittest.mock import AsyncMock
 from app.services.trading import TradingService
@@ -17,9 +18,9 @@ def mock_account():
     """Mock account with USDT 15,000 starting balance"""
     return {
         'account_id': 1,
-        'initial_balance': 15000.0,
-        'btc_quantity': 1.0,
-        'btc_avg_price': 50000.0
+        'initial_balance': Decimal('15000'),
+        'btc_quantity': Decimal('1'),
+        'btc_avg_price': Decimal('50000')
     }
 
 @pytest.fixture
@@ -32,11 +33,11 @@ class TestTradingService:
     
     def test_calculate_initial_margin_required(self, trading_service):
         """Test initial margin calculation (20% of notional)"""
-        quantity = 1.0
-        price = 50000.0
+        quantity = Decimal('1')
+        price = Decimal('50000')
         # Notional = 1 * 50000 = 50000 USDT
         # Initial margin = 50000 * 0.20 = 10000 USDT
-        expected = 10000.0
+        expected = Decimal('10000')
         
         result = trading_service.calculate_initial_margin_required(quantity, price)
         assert result == expected
@@ -48,12 +49,12 @@ class TestTradingService:
         
         # Setup mocks
         account_client.get_all_positions.return_value = {
-            "BTC-PERP": {"quantity": 1.0, "avg_price": 50000.0}
+            "BTC-PERP": {"quantity": Decimal('1'), "avg_price": Decimal('50000')}
         }
-        market_client.get_mark_price.return_value = 50000.0
+        market_client.get_mark_price.return_value = Decimal('50000')
         
         # Maintenance margin = 1 * 50000 * 0.10 = 5000 USDT
-        expected = 5000.0
+        expected = Decimal('5000')
         
         result = await trading_service.calculate_maintenance_margin(1)
         assert result == expected
@@ -82,17 +83,17 @@ class TestTradingService:
         account_client, market_client, postgres_client = mock_clients
         
         # Setup: Account holds 1 BTC bought at 50000, balance reduced to 5000
-        account_client.get_balance.return_value = 5000.0  # 15000 - 50000 notional + margin
+        account_client.get_balance.return_value = Decimal('5000')  # 15000 - 50000 notional + margin
         account_client.get_all_positions.return_value = {
             "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_avg_price']}
         }
-        market_client.get_mark_price.return_value = 55000.0  # BTC up 10%
+        market_client.get_mark_price.return_value = Decimal('55000')  # BTC up 10%
         
         # Test
         equity = await trading_service.calculate_equity(mock_account['account_id'])
         
         # Expected: balance + position P&L = 5000 + (55000-50000)*1 = 10000 USDT
-        assert equity == 10000.0
+        assert equity == Decimal('10000')
     
     @pytest.mark.asyncio
     async def test_equity_calculation_btc_falls(self, trading_service, mock_clients, mock_account):
@@ -100,17 +101,17 @@ class TestTradingService:
         account_client, market_client, postgres_client = mock_clients
         
         # Setup: Account holds 1 BTC bought at 50000, balance 5000
-        account_client.get_balance.return_value = 5000.0
+        account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
             "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_avg_price']}
         }
-        market_client.get_mark_price.return_value = 45000.0  # BTC down 10%
+        market_client.get_mark_price.return_value = Decimal('45000')  # BTC down 10%
         
         # Test
         equity = await trading_service.calculate_equity(mock_account['account_id'])
         
         # Expected: balance + position P&L = 5000 + (45000-50000)*1 = 0 USDT
-        assert equity == 0.0
+        assert equity == Decimal('0')
     
     @pytest.mark.asyncio
     async def test_cannot_buy_second_btc_insufficient_equity(self, trading_service, mock_clients, mock_account):
@@ -118,15 +119,15 @@ class TestTradingService:
         account_client, market_client, postgres_client = mock_clients
         
         # Setup: Account holds 1 BTC, BTC price fell, low equity
-        account_client.get_balance.return_value = 5000.0
+        account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
             "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_avg_price']}
         }
-        market_client.get_mark_price.return_value = 45000.0  # Current equity = 0
+        market_client.get_mark_price.return_value = Decimal('45000')  # Current equity = 0
         
         # Test: Try to buy another 1 BTC at current price (needs 9000 margin)
         success, message = await trading_service.pre_trade_check(
-            mock_account['account_id'], "BUY", 1.0, 45000.0
+            mock_account['account_id'], "BUY", Decimal('1'), Decimal('45000')
         )
         
         assert success is False
@@ -139,17 +140,17 @@ class TestTradingService:
         account_client, market_client, postgres_client = mock_clients
         
         # Setup: Account holds 1 BTC, BTC price recovered, good equity
-        account_client.get_balance.return_value = 5000.0
+        account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
             "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_avg_price']}
         }
-        market_client.get_mark_price.return_value = 60000.0  # BTC up 20%
+        market_client.get_mark_price.return_value = Decimal('60000')  # BTC up 20%
         
         # Current equity = 5000 + (60000-50000)*1 = 15000 USDT
         
         # Test: Try to buy another 1 BTC at current price (needs 12000 margin)
         success, message = await trading_service.pre_trade_check(
-            mock_account['account_id'], "BUY", 1.0, 60000.0
+            mock_account['account_id'], "BUY", Decimal('1'), Decimal('60000')
         )
         
         assert success is True
@@ -162,17 +163,17 @@ class TestTradingService:
         account_client, market_client, postgres_client = mock_clients
         
         # Setup: Account holds 1 BTC, severe crash
-        account_client.get_balance.return_value = 5000.0
+        account_client.get_balance.return_value = Decimal('5000')
         account_client.get_all_positions.return_value = {
             "BTC-PERP": {"quantity": mock_account['btc_quantity'], "avg_price": mock_account['btc_avg_price']}
         }
-        market_client.get_mark_price.return_value = 40000.0  # BTC down 20%
+        market_client.get_mark_price.return_value = Decimal('40000')  # BTC down 20%
         
         # Test equity calculation
         equity = await trading_service.calculate_equity(mock_account['account_id'])
         
         # Expected: balance + position P&L = 5000 + (40000-50000)*1 = -5000 USDT
-        assert equity == -5000.0
+        assert equity == Decimal('-5000')
         
         # With negative equity, maintenance margin check should fail
         # Maintenance margin needed: 40000 * 0.10 = 4000 USDT
@@ -181,30 +182,30 @@ class TestTradingService:
     def test_calculate_pnl_profit(self, mock_account):
         """Test P&L calculation for profitable position (inline calculation)"""
         avg_price = mock_account['btc_avg_price']  # 50000
-        mark_price = 55000.0
+        mark_price = Decimal('55000')
         quantity = mock_account['btc_quantity']  # 1
         
         # P&L = (mark_price - avg_price) * quantity
         pnl = (mark_price - avg_price) * quantity
         
         # Expected: (55000 - 50000) * 1 = 5000 USDT profit
-        assert pnl == 5000.0
+        assert pnl == Decimal('5000')
     
     def test_calculate_pnl_loss(self, mock_account):
         """Test P&L calculation for losing position (inline calculation)"""
         avg_price = mock_account['btc_avg_price']  # 50000
-        mark_price = 45000.0
+        mark_price = Decimal('45000')
         quantity = mock_account['btc_quantity']  # 1
         
         # P&L = (mark_price - avg_price) * quantity
         pnl = (mark_price - avg_price) * quantity
         
         # Expected: (45000 - 50000) * 1 = -5000 USDT loss
-        assert pnl == -5000.0
+        assert pnl == Decimal('-5000')
     
     @pytest.mark.asyncio
     async def test_get_trade_history(self, trading_service, mock_clients, mock_account):
-        """Test getting trade history with proper float precision"""
+        """Test getting trade history with proper Decimal precision"""
         account_client, market_client, postgres_client = mock_clients
         
         # Setup mock trades
@@ -216,7 +217,7 @@ class TestTradingService:
                 side="BUY",
                 quantity=mock_account['btc_quantity'],
                 price=mock_account['btc_avg_price'],
-                notional=50000.0
+                notional=Decimal('50000')
             )
         ]
         postgres_client.fetch_models.return_value = mock_trades
@@ -228,6 +229,6 @@ class TestTradingService:
         assert len(trades) == 1
         assert trades[0].symbol == "BTC-PERP"
         assert trades[0].side == "BUY"
-        assert trades[0].quantity == 1.0
-        assert trades[0].price == 50000.0
+        assert trades[0].quantity == Decimal('1')
+        assert trades[0].price == Decimal('50000')
         postgres_client.fetch_models.assert_called_once()

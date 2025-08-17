@@ -4,9 +4,10 @@ from pydantic.main import BaseModel
 from typing import List, Optional, Dict, Any
 from .services.trading import TradingService
 from .services.margin import MarginService
+from decimal import Decimal
 from .redis_client import MarketRedisClient
 from .models import Trade, Liquidation
-from decimal import Decimal
+
 
 router = APIRouter()
 
@@ -44,22 +45,29 @@ class TradeResponse(BaseModel):
 
 class Position(BaseModel):
     symbol: str
-    quantity: float
-    avg_price: float
-    mark_price: float
-    unrealised_pnl: float
-    notional: float
+    quantity: Decimal
+    avg_price: Decimal
+    mark_price: Decimal
+    unrealised_pnl: Decimal
+    notional: Decimal
 
 class AccountPositionsResponse(BaseModel):
     account_id: int
-    balance: float
-    equity: float
+    balance: Decimal
+    equity: Decimal
     positions: List[Position]
+
+class AccountMarginDetail(BaseModel):
+    account_id: int
+    equity: Decimal
+    maintenance_margin_required: Decimal
+    margin_utilisation_pct: Decimal
+    liquidation_risk: bool
 
 class MarginReportResponse(BaseModel):
     total_accounts: int
     liquidation_candidates: List[int]
-    accounts_detail: List[Dict[str, Any]]
+    accounts_detail: List[AccountMarginDetail]
 
 # ----------------------------
 # API Endpoints
@@ -95,19 +103,19 @@ async def get_positions(account_id: int):
         positions = [
             Position(
                 symbol=pos["symbol"],
-                quantity=float(pos["quantity"]),
-                avg_price=float(pos["avg_price"]),
-                mark_price=float(pos["mark_price"]),
-                unrealised_pnl=float(pos["unrealised_pnl"]),
-                notional=float(pos["notional"])
+                quantity=pos["quantity"],
+                avg_price=pos["avg_price"],
+                mark_price=pos["mark_price"],
+                unrealised_pnl=pos["unrealised_pnl"],
+                notional=pos["notional"]
             )
             for pos in account_data["positions"]
         ]
         
         return AccountPositionsResponse(
             account_id=account_data["account_id"],
-            balance=float(account_data["balance"]),
-            equity=float(account_data["equity"]),
+            balance=account_data["balance"],
+            equity=account_data["equity"],
             positions=positions
         )
         
@@ -138,7 +146,10 @@ async def margin_report():
         return MarginReportResponse(
             total_accounts=report_data["total_accounts"],
             liquidation_candidates=report_data["liquidation_candidates"],
-            accounts_detail=report_data["accounts_detail"]
+            accounts_detail=[
+                AccountMarginDetail(**account_detail) 
+                for account_detail in report_data["accounts_detail"]
+            ]
         )
         
     except Exception as e:

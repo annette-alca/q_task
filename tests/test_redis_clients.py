@@ -1,5 +1,6 @@
 import pytest
 from decimal import Decimal
+
 from unittest.mock import AsyncMock, patch
 from app.redis_client import AccountRedisClient, MarketRedisClient
 
@@ -62,25 +63,20 @@ class TestAccountRedisClient:
         client, mock_conn = account_client
         
         # Setup mock for get
-        mock_conn.hgetall.return_value = {
-            "quantity": "1.5",
-            "entry_price": "50000.00"
-        }
+        mock_conn.hget.return_value = "1.5,50000.00"
         
         # Test set
         await client.set_position(123, "BTC-PERP", Decimal('1.5'), Decimal('50000.00'))
         
         # Verify set calls
-        assert mock_conn.hset.call_count == 2
-        mock_conn.hset.assert_any_call("position:123:BTC-PERP", "quantity", "1.5")
-        mock_conn.hset.assert_any_call("position:123:BTC-PERP", "entry_price", "50000.00")
+        mock_conn.hset.assert_called_with("positions:123", "BTC-PERP", "1.5,50000.00")
         
         # Test get
         position = await client.get_position(123, "BTC-PERP")
-        mock_conn.hgetall.assert_called_with("position:123:BTC-PERP")
+        mock_conn.hget.assert_called_with("positions:123", "BTC-PERP")
         
         assert position["quantity"] == Decimal('1.5')
-        assert position["entry_price"] == Decimal('50000.00')
+        assert position["avg_price"] == Decimal('50000.00')
 
 class TestMarketRedisClient:
     

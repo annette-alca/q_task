@@ -1,4 +1,5 @@
 
+from decimal import Decimal
 from typing import Optional, Dict, Any, Tuple, List
 from ..redis_client import AccountRedisClient, MarketRedisClient
 from ..postgres import AsyncPostgresClient
@@ -11,15 +12,15 @@ class TradingService:
         self.postgres_client = postgres_client
         
         # Configuration
-        self.INITIAL_MARGIN_RATE = 0.20  # 20%
-        self.MAINTENANCE_MARGIN_RATE = 0.10  # 10%
+        self.INITIAL_MARGIN_RATE = Decimal('0.20')  # 20%
+        self.MAINTENANCE_MARGIN_RATE = Decimal('0.10')  # 10%
 
-    async def calculate_equity(self, account_id: int) -> float:
+    async def calculate_equity(self, account_id: int) -> Decimal:
         """Calculate account equity = balance + sum(position PnL)"""
         balance = await self.account_client.get_balance(account_id)
         positions = await self.account_client.get_all_positions(account_id)
         
-        total_pnl = 0.0
+        total_pnl = Decimal('0')
         for symbol, position_data in positions.items():
             if position_data["quantity"] == 0:
                 continue
@@ -31,10 +32,10 @@ class TradingService:
         
         return balance + total_pnl
 
-    async def calculate_maintenance_margin(self, account_id: int) -> float:
+    async def calculate_maintenance_margin(self, account_id: int) -> Decimal:
         """Calculate total maintenance margin required"""
         positions = await self.account_client.get_all_positions(account_id)
-        total_maintenance = 0.0
+        total_maintenance = Decimal('0')
         
         for symbol, position_data in positions.items():
             if position_data["quantity"] == 0:
@@ -48,12 +49,12 @@ class TradingService:
         
         return total_maintenance
 
-    def calculate_initial_margin_required(self, quantity: float, price: float) -> float:
+    def calculate_initial_margin_required(self, quantity: Decimal, price: Decimal) -> Decimal:
         """Calculate initial margin required for a new trade (pure function)"""
         notional = abs(quantity) * price
         return notional * self.INITIAL_MARGIN_RATE
 
-    async def pre_trade_check(self, account_id: int, side: str, quantity: float, price: float) -> Tuple[bool, str]:
+    async def pre_trade_check(self, account_id: int, side: str, quantity: Decimal, price: Decimal) -> Tuple[bool, str]:
         """Perform pre-trade margin checks"""
         equity = await self.calculate_equity(account_id)
         
@@ -74,7 +75,7 @@ class TradingService:
         
         return True, "Trade approved"
 
-    def calculate_new_position(self, current_position: Optional[Dict[str, float]], trade_quantity: float, trade_price: float) -> Tuple[float, float]:
+    def calculate_new_position(self, current_position: Optional[Dict[str, Decimal]], trade_quantity: Decimal, trade_price: Decimal) -> Tuple[Decimal, Decimal]:
         """Calculate new position after trade with weighted average price (pure function)"""
         if current_position is None:
             return trade_quantity, trade_price
@@ -84,7 +85,7 @@ class TradingService:
         new_quantity = current_qty + trade_quantity
         
         if new_quantity == 0:
-            return 0.0, 0.0
+            return Decimal('0'), Decimal('0')
         
         # Weighted average for same direction trades
         if (current_qty > 0 and trade_quantity > 0) or (current_qty < 0 and trade_quantity < 0):
@@ -96,20 +97,20 @@ class TradingService:
             
         return new_quantity, new_avg_price
 
-    async def _record_trade_in_postgres(self, account_id: int, symbol: str, side: str, quantity: float, price: float, notional: float) -> int:
+    async def _record_trade_in_postgres(self, account_id: int, symbol: str, side: str, quantity: Decimal, price: Decimal, notional: Decimal) -> int:
         """Record trade in PostgreSQL and return trade ID"""
         trade = Trade(
             account_id=account_id,
             symbol=symbol,
             side=side.upper(),
-            quantity=float(quantity),
-            price=float(price),
-            notional=float(notional)
+            quantity=quantity,
+            price=price,
+            notional=notional
         )
         
         return await self.postgres_client.insert_model(trade, "trades")
 
-    async def execute_trade(self, account_id: int, symbol: str, side: str, quantity: float, price: float) -> Tuple[bool, str, Optional[int]]:
+    async def execute_trade(self, account_id: int, symbol: str, side: str, quantity: Decimal, price: Decimal) -> Tuple[bool, str, Optional[int]]:
         """Execute a trade after pre-trade checks"""
         # Validate quantity for BTC trades (must be whole numbers)
         if symbol == "BTC-PERP" and quantity % 1 != 0:
@@ -154,7 +155,7 @@ class TradingService:
         positions_data = await self.account_client.get_all_positions(account_id)
         
         positions = []
-        total_pnl = 0.0
+        total_pnl = Decimal('0')
         
         for symbol, pos_data in positions_data.items():
             if pos_data["quantity"] == 0:

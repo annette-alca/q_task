@@ -26,26 +26,26 @@ class Liquidation(BaseModel):
 
 
 # SQL table creation queries
-TRADES_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS trades (
-    id SERIAL PRIMARY KEY,
-    account_id INTEGER NOT NULL,
-    symbol VARCHAR(20) NOT NULL,
-    side VARCHAR(4) NOT NULL,
-    quantity DECIMAL(20, 8) NOT NULL,
-    price DECIMAL(20, 8) NOT NULL,
-    notional DECIMAL(20, 8) NOT NULL,
-    timestamp TIMESTAMP NOT NULL DEFAULT NOW()
-);
-"""
+# TRADES_TABLE_SQL = """
+# CREATE TABLE IF NOT EXISTS trades (
+#     id SERIAL PRIMARY KEY,
+#     account_id INTEGER NOT NULL,
+#     symbol VARCHAR(20) NOT NULL,
+#     side VARCHAR(4) NOT NULL,
+#     quantity DECIMAL(20, 8) NOT NULL,
+#     price DECIMAL(20, 8) NOT NULL,
+#     notional DECIMAL(20, 8) NOT NULL,
+#     timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+# );
+# """
 
-LIQUIDATIONS_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS liquidations (
-    id SERIAL PRIMARY KEY,
-    account_id INTEGER NOT NULL,
-    equity DECIMAL(20, 8) NOT NULL,
-    maintenance_margin DECIMAL(20, 8) NOT NULL,
-    reason TEXT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-"""
+# LIQUIDATIONS_TABLE_SQL = """
+# CREATE TABLE IF NOT EXISTS liquidations (
+#     id SERIAL PRIMARY KEY,
+#     account_id INTEGER NOT NULL,
+#     equity DECIMAL(20, 8) NOT NULL,
+#     maintenance_margin DECIMAL(20, 8) NOT NULL,
+#     reason TEXT,
+#     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+# );
+# """

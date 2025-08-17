@@ -21,8 +21,9 @@ Prerequisites:
 import asyncio
 import sys
 import httpx
-import time
 from decimal import Decimal
+import time
+
 from typing import Dict, Any
 
 # Add the app directory to the path

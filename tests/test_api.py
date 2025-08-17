@@ -106,8 +106,8 @@ class TestTradeAPI:
         
         # Verify service was called with correct parameters
         mock_trading_service.execute_trade.assert_called_once_with(
-            1, "BTC-PERP", "BUY", Decimal('1'), Decimal('50000.0')
-        )
+            1, "BTC-PERP", "BUY", Decimal('1'), Decimal('50000')
+          )
     
     def test_execute_trade_insufficient_margin(self, client, mock_trading_service):
         """Test trade rejection due to insufficient margin"""
@@ -172,16 +172,16 @@ class TestPositionsAPI:
         # Setup mock data
         mock_positions = {
             "account_id": 1,
-            "balance": 10000.0,
-            "equity": 12000.0,
+            "balance": Decimal('10000'),
+            "equity": Decimal('12000'),
             "positions": [
                 {
                     "symbol": "BTC-PERP",
-                    "quantity": 0.1,
-                    "avg_price": 50000.0,
-                    "mark_price": 52000.0,
-                    "unrealised_pnl": 200.0,
-                    "notional": 5200.0
+                    "quantity": Decimal('0.1'),
+                    "avg_price": Decimal('50000'),
+                    "mark_price": Decimal('52000'),
+                    "unrealised_pnl": Decimal('200'),
+                    "notional": Decimal('5200')
                 }
             ]
         }
@@ -192,18 +192,18 @@ class TestPositionsAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["account_id"] == 1
-        assert data["balance"] == 10000.0
-        assert data["equity"] == 12000.0
+        assert data["balance"] == "10000"
+        assert data["equity"] == "12000"
         assert len(data["positions"]) == 1
         assert data["positions"][0]["symbol"] == "BTC-PERP"
-        assert data["positions"][0]["unrealised_pnl"] == 200.0
+        assert data["positions"][0]["unrealised_pnl"] == "200"
     
     def test_get_positions_no_positions(self, client, mock_trading_service):
         """Test positions retrieval for account with no positions"""
         mock_positions = {
             "account_id": 1,
-            "balance": 10000.0,
-            "equity": 10000.0,
+            "balance": Decimal('10000'),
+            "equity": Decimal('10000'),
             "positions": []
         }
         mock_trading_service.get_account_positions.return_value = mock_positions
@@ -213,8 +213,8 @@ class TestPositionsAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["account_id"] == 1
-        assert data["balance"] == 10000.0
-        assert data["equity"] == 10000.0
+        assert data["balance"] == "10000"
+        assert data["equity"] == "10000"
         assert len(data["positions"]) == 0
 
 class TestMarkPriceAPI:
@@ -257,16 +257,16 @@ class TestMarginReportAPI:
             "accounts_detail": [
                 {
                     "account_id": 1,
-                    "equity": 10000.0,
-                    "maintenance_margin_required": 2000.0,
-                    "margin_utilisation_pct": 20.0,
+                    "equity": Decimal('10000'),
+                    "maintenance_margin_required": Decimal('2000'),
+                    "margin_utilisation_pct": Decimal('20'),
                     "liquidation_risk": False
                 },
                 {
                     "account_id": 2,
-                    "equity": 800.0,
-                    "maintenance_margin_required": 1000.0,
-                    "margin_utilisation_pct": 125.0,
+                    "equity": Decimal('800'),
+                    "maintenance_margin_required": Decimal('1000'),
+                    "margin_utilisation_pct": Decimal('125'),
                     "liquidation_risk": True
                 }
             ]
@@ -286,8 +286,14 @@ class TestMarginReportAPI:
         account2 = next(acc for acc in data["accounts_detail"] if acc["account_id"] == 2)
         
         assert account1["liquidation_risk"] is False
+        assert account1["margin_utilisation_pct"] == "20"
+        assert account1["equity"] == "10000"
+        assert account1["maintenance_margin_required"] == "2000"
+        
         assert account2["liquidation_risk"] is True
-        assert account2["margin_utilisation_pct"] == 125.0
+        assert account2["margin_utilisation_pct"] == "125"
+        assert account2["equity"] == "800"
+        assert account2["maintenance_margin_required"] == "1000"
     
     def test_margin_report_no_liquidations(self, client, mock_margin_service):
         """Test margin report with no liquidation candidates"""
@@ -297,9 +303,9 @@ class TestMarginReportAPI:
             "accounts_detail": [
                 {
                     "account_id": 1,
-                    "equity": 10000.0,
-                    "maintenance_margin_required": 2000.0,
-                    "margin_utilisation_pct": 20.0,
+                    "equity": Decimal('10000'),
+                    "maintenance_margin_required": Decimal('2000'),
+                    "margin_utilisation_pct": Decimal('20'),
                     "liquidation_risk": False
                 }
             ]
@@ -329,9 +335,9 @@ class TestTradeHistoryAPI:
                 account_id=1,
                 symbol="BTC-PERP",
                 side="BUY",
-                quantity=0.1,
-                price=50000.0,
-                notional=5000.0,
+                quantity=Decimal('0.1'),
+                price=Decimal('50000'),
+                notional=Decimal('5000'),
                 timestamp=datetime.now()
             ),
             Trade(
@@ -339,9 +345,9 @@ class TestTradeHistoryAPI:
                 account_id=1,
                 symbol="BTC-PERP",
                 side="SELL",
-                quantity=0.05,
-                price=52000.0,
-                notional=2600.0,
+                quantity=Decimal('0.05'),
+                price=Decimal('52000'),
+                notional=Decimal('2600'),
                 timestamp=datetime.now()
             )
         ]
@@ -354,7 +360,7 @@ class TestTradeHistoryAPI:
         assert len(data["trades"]) == 2
         assert data["trades"][0]["side"] == "BUY"
         assert data["trades"][1]["side"] == "SELL"
-        assert data["trades"][0]["notional"] == 5000.0
+        assert data["trades"][0]["notional"] == "5000"
 
 class TestLiquidationHistoryAPI:
     """Test liquidation history endpoints"""
@@ -369,8 +375,8 @@ class TestLiquidationHistoryAPI:
             Liquidation(
                 id=1,
                 account_id=2,
-                equity=800.0,
-                maintenance_margin=1000.0,
+                equity=Decimal('800'),
+                maintenance_margin=Decimal('1000'),
                 reason="Equity below maintenance margin",
                 timestamp=datetime.now()
             )
@@ -383,7 +389,7 @@ class TestLiquidationHistoryAPI:
         data = response.json()
         assert len(data["liquidations"]) == 1
         assert data["liquidations"][0]["account_id"] == 2
-        assert data["liquidations"][0]["equity"] == 800.0
+        assert data["liquidations"][0]["equity"] == "800"
         assert "Equity below maintenance margin" in data["liquidations"][0]["reason"]
 
 class TestHealthEndpoints:
