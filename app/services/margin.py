@@ -1,4 +1,4 @@
-from decimal import Decimal
+
 from typing import List, Dict, Any, Optional
 from ..redis_client import AccountRedisClient, MarketRedisClient
 from ..postgres import AsyncPostgresClient
@@ -9,14 +9,14 @@ class MarginService:
         self.account_client = account_client
         self.market_client = market_client
         self.postgres_client = postgres_client
-        self.MAINTENANCE_MARGIN_RATE = Decimal('0.10')  # 10%
+        self.MAINTENANCE_MARGIN_RATE = 0.10  # 10%
 
-    async def calculate_account_equity(self, account_id: int) -> Decimal:
+    async def calculate_account_equity(self, account_id: int) -> float:
         """Calculate account equity = balance + sum(position PnL)"""
         balance = await self.account_client.get_balance(account_id)
         positions = await self.account_client.get_all_positions(account_id)
         
-        total_pnl = Decimal('0')
+        total_pnl = 0.0
         for symbol, position_data in positions.items():
             if position_data["quantity"] == 0:
                 continue
@@ -28,10 +28,10 @@ class MarginService:
         
         return balance + total_pnl
 
-    async def calculate_maintenance_margin_required(self, account_id: int) -> Decimal:
+    async def calculate_maintenance_margin_required(self, account_id: int) -> float:
         """Calculate total maintenance margin required for account"""
         positions = await self.account_client.get_all_positions(account_id)
-        total_maintenance = Decimal('0')
+        total_maintenance = 0.0
         
         for symbol, position_data in positions.items():
             if position_data["quantity"] == 0:
@@ -45,15 +45,15 @@ class MarginService:
         
         return total_maintenance
 
-    def calculate_margin_utilisation(self, equity: Decimal, maintenance_required: Decimal) -> Decimal:
+    def calculate_margin_utilisation(self, equity: float, maintenance_required: float) -> float:
         """Calculate margin utilisation percentage (pure function)"""
-        return (maintenance_required / equity * 100) if equity > 0 else Decimal('100')
+        return (maintenance_required / equity * 100) if equity > 0 else 100.0
 
-    def is_liquidation_candidate(self, equity: Decimal, maintenance_required: Decimal) -> bool:
+    def is_liquidation_candidate(self, equity: float, maintenance_required: float) -> bool:
         """Check if account should be liquidated (pure function)"""
         return equity < maintenance_required
 
-    async def record_liquidation(self, account_id: int, equity: Decimal, maintenance_margin: Decimal, reason: str):
+    async def record_liquidation(self, account_id: int, equity: float, maintenance_margin: float, reason: str):
         """Record liquidation event in PostgreSQL"""
         liquidation = Liquidation(
             account_id=account_id,
