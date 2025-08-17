@@ -4,7 +4,7 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import FastAPI
 from app.api import router
-from app.services.trading import TradingService
+from app.services.trading import TradingService, TradingError
 from app.services.margin import MarginService
 from app.redis_client import AccountRedisClient, MarketRedisClient
 from app.postgres import AsyncPostgresClient
@@ -64,7 +64,7 @@ class TestTradeAPI:
     def test_execute_trade_success(self, client, mock_trading_service):
         """Test successful trade execution"""
         # Setup mocks for successful trade
-        mock_trading_service.execute_trade.return_value = (True, "Trade executed successfully", 123)
+        mock_trading_service.execute_trade.side_effect = TradingError("BTC trades must be in whole numbers (no fractional BTC)")
         
         # Test trade request
         trade_data = {
@@ -81,6 +81,9 @@ class TestTradeAPI:
         assert response.status_code == 400
         data = response.json()
         assert "BTC trades must be in whole numbers" in data["detail"]
+        
+        # Verify the service was called
+        mock_trading_service.execute_trade.assert_called_once()
     
     def test_execute_trade_success_whole_btc(self, client, mock_trading_service):
         """Test successful trade execution with whole BTC quantity"""
@@ -112,11 +115,7 @@ class TestTradeAPI:
     def test_execute_trade_insufficient_margin(self, client, mock_trading_service):
         """Test trade rejection due to insufficient margin"""
         # Setup mocks for failed trade
-        mock_trading_service.execute_trade.return_value = (
-            False, 
-            "Insufficient equity. Required: 10000, Available: 5000", 
-            None
-        )
+        mock_trading_service.execute_trade.side_effect = TradingError("Insufficient equity. Required: 10000, Available: 5000")
         
         trade_data = {
             "account_id": 1,
@@ -148,7 +147,7 @@ class TestTradeAPI:
     def test_execute_trade_invalid_side(self, client, mock_trading_service):
         """Test trade with invalid side"""
         # Setup mock for the service call
-        mock_trading_service.execute_trade.return_value = (False, "Invalid side", None)
+        mock_trading_service.execute_trade.side_effect = TradingError("Invalid side")
         
         trade_data = {
             "account_id": 1,

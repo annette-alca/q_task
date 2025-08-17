@@ -5,6 +5,11 @@ from ..redis_client import AccountRedisClient, MarketRedisClient
 from ..postgres import AsyncPostgresClient
 from ..models import Trade
 
+
+class TradingError(Exception):
+    """Custom exception for trading-related business logic errors"""
+    pass
+
 class TradingService:
     def __init__(self, account_client: AccountRedisClient, market_client: MarketRedisClient, postgres_client: AsyncPostgresClient):
         self.account_client = account_client
@@ -107,12 +112,12 @@ class TradingService:
         """Execute a trade after pre-trade checks"""
         # Validate quantity for BTC trades (must be whole numbers)
         if symbol == "BTC-PERP" and quantity % 1 != 0:
-            return False, "BTC trades must be in whole numbers (no fractional BTC)", None
+            raise TradingError("BTC trades must be in whole numbers (no fractional BTC)")
         
         # Pre-trade check
         check_passed, message = await self.pre_trade_check(account_id, side, quantity, price)
         if not check_passed:
-            return False, message, None
+            raise TradingError(message)
 
         # Calculate trade details
         notional = quantity * price
