@@ -50,10 +50,9 @@ mark_prices -> hash: {symbol: price}
 docker-compose up -d
 ```
 
-2. **Install and run:**
+2. **Set up environment:**
 ```bash
-poetry install
-poetry run python -m app.main
+cp env.example .env
 ```
 
 3. **Run tests:**
@@ -61,7 +60,14 @@ poetry run python -m app.main
 poetry run pytest tests/ -v
 ```
 
-4. **Run integration test (optional):**
+4. **Install and run:** This will make the endpoints available at http://localhost:8000 
+```bash
+poetry install
+poetry run python -m app.main
+
+```
+
+5. **Run integration test (optional):**
 ```bash
 poetry run python test_integration.py
 ```
@@ -83,7 +89,7 @@ curl -X POST "http://localhost:8000/trade" \
     "account_id": 1,
     "symbol": "BTC-PERP", 
     "side": "BUY",
-    "quantity": 0.1,
+    "quantity": 1,
     "price": 50000
   }'
 
