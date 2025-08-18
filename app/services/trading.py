@@ -63,7 +63,7 @@ class TradingService:
         notional = abs(quantity) * price
         return notional * self.INITIAL_MARGIN_RATE
 
-    async def pre_trade_check(self, account_id: int, side: str, trade_quantity: Decimal, price: Decimal) -> Tuple[bool, str]:
+    async def pre_trade_check(self, account_id: int, side: str, trade_quantity: Decimal, price: Decimal) -> Tuple[bool, str, Decimal]:
         """Perform pre-trade margin checks"""
         equity = await self.calculate_equity(account_id)
         
@@ -76,13 +76,13 @@ class TradingService:
         if side.upper() == "SELL":
             current_quantity = current_positions["BTC-PERP"]["quantity"] #assume only BTC-PERP is traded
             if current_quantity - trade_quantity < 0:
-                return False, f"Insufficient quantity. Required: {trade_quantity}, Available: {current_quantity}"
+                return False, f"Insufficient quantity. Required: {trade_quantity}, Available: {current_quantity}", required_margin
  
         elif side.upper() == "BUY":
             total_required = required_margin + current_maintenance
         
             if equity < total_required:
-                return False, f"Insufficient equity. Required: {total_required}, Available: {equity}"
+                return False, f"Insufficient equity. Required: {total_required}, Available: {equity}", required_margin
         else:
             raise TradingError("Invalid side. Side must be BUY or SELL")
         
@@ -135,7 +135,7 @@ class TradingService:
             raise TradeNotApproved(message)
 
         # Calculate trade details
-        # notional = quantity * price
+        notional = quantity * price
         trade_quantity = quantity if side.upper() == "BUY" else -quantity
         
         # Get current position and calculate new position
@@ -152,10 +152,12 @@ class TradingService:
         await self.account_client.set_balance(account_id, new_balance)
 
         # Update equity in Redis
-        await self.account_client._update_equity_in_redis(account_id)
+        equity = await self.calculate_equity(account_id)
+        await self.account_client.set_equity(account_id, equity)
 
         # Update used margin in Redis
-        await self.account_client._update_used_margin_in_redis(account_id)
+        used_margin = await self.calculate_maintenance_margin(account_id)
+        await self.account_client.set_used_margin(account_id, used_margin)
 
         # Record trade in PostgreSQL
         trade_id = await self._record_trade_in_postgres(account_id, symbol, side, quantity, price, notional)

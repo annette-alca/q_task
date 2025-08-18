@@ -61,8 +61,8 @@ def client(mock_trading_service, mock_margin_service):
 class TestTradeAPI:
     """Test trade execution endpoints"""
     
-    def test_execute_trade_success(self, client, mock_trading_service):
-        """Test successful trade execution"""
+    def test_execute_trade_invalid_data(self, client, mock_trading_service):
+        """Test failed execution due to invalid data"""
         # Setup mocks for successful trade
         mock_trading_service.execute_trade.side_effect = TradingError("BTC trades must be in whole numbers (no fractional BTC)")
         
@@ -70,16 +70,18 @@ class TestTradeAPI:
         trade_data = {
             "account_id": 1,
             "symbol": "BTC-PERP",
-            "side": "BUY",
-            "quantity": 0.1,
+            "side": "SELL", 
+            "quantity": 1.1, #fractional BTC is not allowed
             "price": 50000.0
         }
         
         response = client.post("/trade", json=trade_data)
         
         # The service should be called and return the validation error
-        assert response.status_code == 400
+
         data = response.json()
+        print(data, '<<<< data for invalid data')
+        assert data["status_code"] == 400
         assert "BTC trades must be in whole numbers" in data["detail"]
         
         # Verify the service was called

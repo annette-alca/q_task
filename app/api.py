@@ -1,8 +1,8 @@
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from .services.trading import TradingService, TradingError
+from .services.trading import TradingService, TradingError, TradeNotApproved
 from .services.margin import MarginService
 from decimal import Decimal
 from .redis_client import MarketRedisClient
@@ -86,6 +86,8 @@ async def execute_trade(req: TradeRequest):
         return TradeResponse(success=True, message=message, trade_id=trade_id)
             
     except TradingError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except TradeNotApproved as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
