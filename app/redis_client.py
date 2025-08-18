@@ -140,21 +140,21 @@ class AccountRedisClient(BaseRedisClient):
 
     async def set_equity(self, account_id: int, equity: Decimal):
         '''Update equity, done after a trade is executed'''
-        await self.account_client.set(f"account:{account_id}:equity", str(equity))
+        await self.set(f"account:{account_id}:equity", str(equity))
 
 
     async def get_equity(self, account_id: int) -> Decimal:
-        equity_str = await self.account_client.get(f"account:{account_id}:equity")
+        equity_str = await self.get(f"account:{account_id}:equity")
         return Decimal(equity_str) if equity_str else Decimal('0')
 
 
     async def set_used_margin(self, account_id: int, used_margin: Decimal):
         '''Update used margin, done after a trade is executed'''
-        await self.account_client.set(f"account:{account_id}:used_margin", str(used_margin))
+        await self.set(f"account:{account_id}:used_margin", str(used_margin))
 
 
     async def get_used_margin(self, account_id: int) -> Decimal:
-        margin_str = await self.account_client.get(f"account:{account_id}:used_margin")
+        margin_str = await self.get(f"account:{account_id}:used_margin")
         return Decimal(margin_str) if margin_str else Decimal('0')
 
 

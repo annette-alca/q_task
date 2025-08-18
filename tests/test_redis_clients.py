@@ -57,6 +57,15 @@ class TestAccountRedisClient:
         # Verify set calls - should store weighted average: (1*50000 + 1*40000)/2 = 45000
         mock_conn.hset.assert_called_with("positions:123", "BTC-PERP", "2,45000.00")
         
+    @pytest.mark.asyncio
+    async def test_set_equity(self, account_client):
+        """Test setting account equity"""
+        client, mock_conn = account_client
+        
+        # Test set
+        await client.set_equity(123, Decimal('15000.75'))
+        mock_conn.set.assert_called_with("account:123:equity", "15000.75")
+        
 
 class TestMarketRedisClient:
     
