@@ -290,8 +290,7 @@ class TestGetTradeHistory:
                 symbol="BTC-PERP",
                 side="BUY",
                 quantity=mock_account_1btc['btc_quantity'],
-                price=mock_account_1btc['btc_avg_price'],
-                notional=Decimal('50000')
+                price=mock_account_1btc['btc_avg_price']
             )
         ]
         postgres_client.fetch_models.return_value = mock_trades

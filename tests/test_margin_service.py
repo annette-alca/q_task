@@ -204,15 +204,11 @@ class TestMarginService:
         account_client, market_client, postgres_client = mock_clients
         
         # Test data
-        equity = Decimal('-3000')
-        maintenance_margin = Decimal('4500')
         reason = "Equity below maintenance margin after BTC price drop"
         
         # Test
         await margin_service.record_liquidation(
             liquidation_account['account_id'], 
-            equity, 
-            maintenance_margin, 
             reason
         )
         
@@ -225,8 +221,6 @@ class TestMarginService:
         
         assert isinstance(liquidation_model, Liquidation)
         assert liquidation_model.account_id == liquidation_account['account_id']
-        assert liquidation_model.equity == equity
-        assert liquidation_model.maintenance_margin == maintenance_margin
         assert liquidation_model.reason == reason
     
     @pytest.mark.asyncio
@@ -239,8 +233,6 @@ class TestMarginService:
             Liquidation(
                 id=1,
                 account_id=2,
-                equity=Decimal('-3000'),
-                maintenance_margin=Decimal('4500'),
                 reason="Equity below maintenance margin after BTC price drop"
             )
         ]
@@ -252,7 +244,6 @@ class TestMarginService:
         # Verify
         assert len(liquidations) == 1
         assert liquidations[0].account_id == 2
-        assert liquidations[0].equity == Decimal('-3000')
-        assert liquidations[0].maintenance_margin == Decimal('4500')
+        assert liquidations[0].reason == "Equity below maintenance margin after BTC price drop"
         postgres_client.fetch_models.assert_called_once()
 

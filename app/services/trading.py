@@ -110,15 +110,14 @@ class TradingService:
             
         return new_quantity, new_avg_price
 
-    async def _record_trade_in_postgres(self, account_id: int, symbol: str, side: str, quantity: Decimal, price: Decimal, notional: Decimal) -> int:
+    async def _record_trade_in_postgres(self, account_id: int, symbol: str, side: str, quantity: Decimal, price: Decimal) -> int:
         """Record trade in PostgreSQL and return trade ID"""
         trade = Trade(
             account_id=account_id,
             symbol=symbol,
             side=side.upper(),
             quantity=quantity,
-            price=price,
-            notional=notional
+            price=price
         )
         
         return await self.postgres_client.insert_model(trade, "trades")
@@ -135,7 +134,6 @@ class TradingService:
             raise TradeNotApproved(message)
 
         # Calculate trade details
-        notional = quantity * price
         trade_quantity = quantity if side.upper() == "BUY" else -quantity
         
         # Get current position and calculate new position
@@ -160,7 +158,7 @@ class TradingService:
         await self.account_client.set_used_margin(account_id, used_margin)
 
         # Record trade in PostgreSQL
-        trade_id = await self._record_trade_in_postgres(account_id, symbol, side, quantity, price, notional)
+        trade_id = await self._record_trade_in_postgres(account_id, symbol, side, quantity, price)
 
         return True, "Trade executed successfully", trade_id
 
@@ -179,7 +177,6 @@ class TradingService:
             mark_price = await self.market_client.get_mark_price(symbol)
             if mark_price:
                 unrealised_pnl = (mark_price - pos_data["avg_price"]) * pos_data["quantity"]
-                notional = abs(pos_data["quantity"]) * mark_price
                 total_pnl += unrealised_pnl
                 
                 positions.append({
@@ -187,8 +184,7 @@ class TradingService:
                     "quantity": pos_data["quantity"],
                     "avg_price": pos_data["avg_price"],
                     "mark_price": mark_price,
-                    "unrealised_pnl": unrealised_pnl,
-                    "notional": notional
+                    "unrealised_pnl": unrealised_pnl
                 })
         
         equity = balance + total_pnl
@@ -203,7 +199,7 @@ class TradingService:
     async def get_trade_history(self, account_id: int, limit: int = 100) -> List[Trade]:
         """Get trade history for an account"""
         query = """
-            SELECT id, account_id, symbol, side, quantity, price, notional, timestamp
+            SELECT id, account_id, symbol, side, quantity, price, timestamp
             FROM trades 
             WHERE account_id = $1 
             ORDER BY timestamp DESC 

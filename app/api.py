@@ -49,7 +49,6 @@ class Position(BaseModel):
     avg_price: Decimal
     mark_price: Decimal
     unrealised_pnl: Decimal
-    notional: Decimal
 
 class AccountPositionsResponse(BaseModel):
     account_id: int
@@ -107,8 +106,7 @@ async def get_positions(account_id: int):
                 quantity=pos["quantity"],
                 avg_price=pos["avg_price"],
                 mark_price=pos["mark_price"],
-                unrealised_pnl=pos["unrealised_pnl"],
-                notional=pos["notional"]
+                unrealised_pnl=pos["unrealised_pnl"]
             )
             for pos in account_data["positions"]
         ]

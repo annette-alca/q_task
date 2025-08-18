@@ -182,7 +182,7 @@ class TestPositionsAPI:
                     "avg_price": Decimal('50000'),
                     "mark_price": Decimal('52000'),
                     "unrealised_pnl": Decimal('2000'),
-                    "notional": Decimal('52000')
+
                 }
             ]
         }
@@ -338,7 +338,6 @@ class TestTradeHistoryAPI:
                 side="BUY",
                 quantity=Decimal('1'),
                 price=Decimal('50000'),
-                notional=Decimal('50000'),
                 timestamp=datetime.now()
             ),
             Trade(
@@ -348,7 +347,6 @@ class TestTradeHistoryAPI:
                 side="SELL",
                 quantity=Decimal('1'),
                 price=Decimal('52000'),
-                notional=Decimal('52000'),
                 timestamp=datetime.now()
             )
         ]
@@ -361,7 +359,7 @@ class TestTradeHistoryAPI:
         assert len(data["trades"]) == 2
         assert data["trades"][0]["side"] == "BUY"
         assert data["trades"][1]["side"] == "SELL"
-        assert data["trades"][0]["notional"] == 50000
+
 
 class TestLiquidationHistoryAPI:
     """Test liquidation history endpoints"""
@@ -376,8 +374,6 @@ class TestLiquidationHistoryAPI:
             Liquidation(
                 id=1,
                 account_id=2,
-                equity=Decimal('800'),
-                maintenance_margin=Decimal('1000'),
                 reason="Equity below maintenance margin",
                 timestamp=datetime.now()
             )
@@ -390,7 +386,7 @@ class TestLiquidationHistoryAPI:
         data = response.json()
         assert len(data["liquidations"]) == 1
         assert data["liquidations"][0]["account_id"] == 2
-        assert data["liquidations"][0]["equity"] == 800
+
         assert "Equity below maintenance margin" in data["liquidations"][0]["reason"]
 
 class TestHealthEndpoints:

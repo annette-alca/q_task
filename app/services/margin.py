@@ -54,12 +54,10 @@ class MarginService:
         """Check if account should be liquidated (pure function)"""
         return equity < maintenance_required
 
-    async def record_liquidation(self, account_id: int, equity: Decimal, maintenance_margin: Decimal, reason: str):
+    async def record_liquidation(self, account_id: int, reason: str):
         """Record liquidation event in PostgreSQL"""
         liquidation = Liquidation(
             account_id=account_id,
-            equity=equity,
-            maintenance_margin=maintenance_margin,
             reason=reason
         )
         
@@ -69,7 +67,7 @@ class MarginService:
         """Get liquidation history, optionally filtered by account"""
         if account_id:
             query = """
-                SELECT id, account_id, equity, maintenance_margin, reason, timestamp
+                SELECT id, account_id, reason, timestamp
                 FROM liquidations 
                 WHERE account_id = $1 
                 ORDER BY timestamp DESC 
@@ -78,7 +76,7 @@ class MarginService:
             return await self.postgres_client.fetch_models(Liquidation, query, account_id, limit)
         else:
             query = """
-                SELECT id, account_id, equity, maintenance_margin, reason, timestamp
+                SELECT id, account_id, reason, timestamp
                 FROM liquidations 
                 ORDER BY timestamp DESC 
                 LIMIT $1
@@ -111,7 +109,7 @@ class MarginService:
             if is_liquidation:
                 liquidation_candidates.append(account_id)
                 reason = f"Equity ({equity}) below maintenance margin ({maintenance_required})"
-                await self.record_liquidation(account_id, equity, maintenance_required, reason)
+                await self.record_liquidation(account_id, reason)
 
         return {
             "total_accounts": len(all_accounts),

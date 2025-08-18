@@ -12,7 +12,6 @@ class Trade(BaseModel):
     side: str  # "BUY" or "SELL"
     quantity: Decimal
     price: Decimal
-    notional: Decimal
     timestamp: Optional[datetime] = None
 
 
@@ -20,11 +19,7 @@ class Liquidation(BaseModel):
     """Model for liquidation events stored in Postgres"""
     id: Optional[int] = None
     account_id: int
-    equity: Decimal
-    maintenance_margin: Decimal
     reason: str
     timestamp: Optional[datetime] = None
 
-
-# SQL table creation queries
 

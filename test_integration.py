@@ -84,8 +84,8 @@ class TradingSystemIntegrationTest:
         print("=" * 50)
         
         # Set initial account balance (10,000 USDT)
-        await self.account_client.set_balance(3456, Decimal('10000'))
-        print(f"✅ Set account 3456 balance to 10,000 USDT")
+        await self.account_client.set_balance(3456, Decimal('15000'))
+        print(f"✅ Set account 3456 balance to 15,000 USDT")
         
         # Set initial BTC mark price (50,000 USDT)
         response = await self.http_client.post(
@@ -198,7 +198,7 @@ class TradingSystemIntegrationTest:
                 
                 # Validate calculations
                 expected_equity = -40000.0  # balance + P&L
-                if abs(data['equity'] - expected_equity) < 0.01:
+                if abs(float(data['equity']) - expected_equity) < 0.01:
                     print(f"✅ Equity calculation correct: {data['equity']} = balance + P&L")
                 else:
                     print(f"❌ Equity calculation incorrect: expected {expected_equity}, got {data['equity']}")
@@ -249,13 +249,13 @@ class TradingSystemIntegrationTest:
                 expected_pnl = 10000.0  # (60000 - 50000) × 1
                 expected_equity = -30000.0  # balance (-40000) + P&L (10000)
                 
-                if abs(pos['unrealised_pnl'] - expected_pnl) < 0.01:
+                if abs(float(pos['unrealised_pnl']) - expected_pnl) < 0.01:
                     print(f"✅ P&L calculation correct: {pos['unrealised_pnl']} = (60000-50000) × 1")
                 else:
                     print(f"❌ P&L calculation incorrect: expected {expected_pnl}, got {pos['unrealised_pnl']}")
                     return False
                 
-                if abs(data['equity'] - expected_equity) < 0.01:
+                if abs(float(data['equity']) - expected_equity) < 0.01:
                     print(f"✅ Equity calculation correct: {data['equity']} = balance + P&L")
                 else:
                     print(f"❌ Equity calculation incorrect: expected {expected_equity}, got {data['equity']}")
@@ -348,13 +348,13 @@ class TradingSystemIntegrationTest:
                 expected_equity = -50000.0  # balance (-40000) + P&L (-10000)
                 expected_maintenance_margin = 4000.0  # 10% × 40000
                 
-                if abs(account_detail['equity'] - expected_equity) < 0.01:
+                if abs(float(account_detail['equity']) - expected_equity) < 0.01:
                     print(f"✅ Equity calculation correct: {account_detail['equity']} = balance + P&L")
                 else:
                     print(f"❌ Equity calculation incorrect: expected {expected_equity}, got {account_detail['equity']}")
                     return False
                 
-                if abs(account_detail['maintenance_margin_required'] - expected_maintenance_margin) < 0.01:
+                if abs(float(account_detail['maintenance_margin_required']) - expected_maintenance_margin) < 0.01:
                     print(f"✅ Maintenance margin calculation correct: {account_detail['maintenance_margin_required']} = 10% × 40000")
                 else:
                     print(f"❌ Maintenance margin calculation incorrect: expected {expected_maintenance_margin}, got {account_detail['maintenance_margin_required']}")

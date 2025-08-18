@@ -1,4 +1,4 @@
- Production-minded async derivatives trading platform built with FastAPI, Redis, and PostgreSQL.
+Production-minded async derivatives trading platform built with FastAPI, Redis, and PostgreSQL.
 
 This system was built following [these instructions](instructions.md).
 
@@ -25,13 +25,22 @@ This system was built following [these instructions](instructions.md).
 ### AccountRedisClient
 ```
 balances -> hash: {account_id: balance}
-positions:{account_id} -> string: JSON with {symbol: {quantity, avg_price}}
+positions:{account_id} -> hash: {symbol: "quantity,avg_price"}
+account:{account_id}:equity -> string: equity
+account:{account_id}:used_margin -> string: used_margin
 ```
-
 ### MarketRedisClient  
 ```
 mark_prices -> hash: {symbol: price}
 ```
+
+## Postgres (history)
+#### `trades`
+| id | account_id | symbol | side | quantity | price | timestamp |
+
+#### `liquidations`
+| id | account_id | reason | timestamp |
+
 
 ## API Endpoints
 
