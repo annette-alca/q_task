@@ -71,24 +71,11 @@ class AccountRedisClient(BaseRedisClient):
         balance_str = await self.hget("balances", str(account_id))
         return Decimal(balance_str) if balance_str else Decimal('0')
 
-    async def set_position(self, account_id: int, symbol: str, quantity: Decimal, entry_price: Decimal):
+    async def set_position(self, account_id: int, symbol: str, quantity: Decimal, avg_price: Decimal):
         """Set position for account and symbol"""
         key = f"positions:{account_id}"
-        
-        # Get existing position for this symbol (if any)
-        existing_position = await self.get_position(account_id, symbol)
-        existing_qty = existing_position["quantity"]
-        existing_avg_price = existing_position["avg_price"]
-        
-        # Calculate new position with weighted average
-        new_quantity = existing_qty + quantity
-        if new_quantity != 0:
-            new_avg_price = (existing_qty * existing_avg_price + quantity * entry_price) / new_quantity
-        else:
-            new_avg_price = Decimal('0')
-        
-        # Store position as tuple string "quantity,avg_price"
-        await self.hset(key, symbol, f"{new_quantity},{new_avg_price}")
+
+        await self.hset(key, symbol, f"{quantity},{avg_price}")
 
     async def get_position(self, account_id: int, symbol: str) -> Optional[Dict[str, Decimal]]:
         """Get position for account and symbol"""

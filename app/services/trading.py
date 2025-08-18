@@ -73,8 +73,8 @@ class TradingService:
         current_positions = await self.account_client.get_all_positions(account_id)
         current_maintenance = await self.calculate_maintenance_margin(account_id)
         
-        if side.upper() == "SELL":
-            current_quantity = current_positions["BTC-PERP"]["quantity"] #assume only BTC-PERP is traded
+        if side.upper() == "SELL": #assume only BTC-PERP is traded
+            current_quantity = current_positions.get("BTC-PERP", {}).get("quantity", Decimal('0')) #assume only BTC-PERP is traded
             if current_quantity - trade_quantity < 0:
                 return False, f"Insufficient quantity. Required: {trade_quantity}, Available: {current_quantity}", required_margin
  

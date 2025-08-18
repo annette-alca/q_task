@@ -177,3 +177,4 @@ async def get_liquidation_history(account_id: Optional[int] = None, limit: int =
         return {"liquidations": [liquidation.model_dump() for liquidation in liquidations]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
