@@ -45,7 +45,7 @@ class TradingSystemIntegrationTest:
         """Initialize connections and HTTP client"""
         print("🔧 Setting up Trading & Margining System Integration Test...")
         
-        # Initialize database clients
+        # Initialise database clients
         self.account_client = AccountRedisClient(
             host=config.REDIS_HOST,
             port=config.REDIS_PORT,
@@ -73,7 +73,7 @@ class TradingSystemIntegrationTest:
         await self.market_client.connect()
         await self.postgres_client.connect()
         
-        # Initialize HTTP client
+        # Initialise HTTP client
         self.http_client = httpx.AsyncClient()
         
         print("✅ System initialized successfully!")
