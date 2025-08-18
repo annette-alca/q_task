@@ -74,6 +74,7 @@ class MarginReportResponse(BaseModel):
 @router.post("/trade", response_model=TradeResponse)
 async def execute_trade(req: TradeRequest):
     """Execute trade with pre-trade margin checks"""
+    
     if not trading_service:
         raise HTTPException(status_code=500, detail="Trading service not initialised")
     
@@ -81,7 +82,7 @@ async def execute_trade(req: TradeRequest):
         success, message, trade_id = await trading_service.execute_trade(
             req.account_id, req.symbol, req.side, Decimal(str(req.quantity)), Decimal(str(req.price))
         )
-        
+
         return TradeResponse(success=True, message=message, trade_id=trade_id)
             
     except TradingError as e:

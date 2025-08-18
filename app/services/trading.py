@@ -125,6 +125,7 @@ class TradingService:
     async def execute_trade(self, account_id: int, symbol: str, side: str, quantity: Decimal, price: Decimal) -> Tuple[bool, str, Optional[int]]:
         """Execute a trade after pre-trade checks"""
         # Validate quantity for BTC trades (must be whole numbers)
+       
         if symbol == "BTC-PERP" and quantity % 1 != 0:
             raise TradingError("BTC trades must be in whole numbers (no fractional BTC)")
         
@@ -132,14 +133,13 @@ class TradingService:
         check_passed, message, required_margin = await self.pre_trade_check(account_id, side, quantity, price)
         if not check_passed:
             raise TradeNotApproved(message)
-
         # Calculate trade details
         trade_quantity = quantity if side.upper() == "BUY" else -quantity
         
         # Get current position and calculate new position
         current_position = await self.account_client.get_position(account_id, symbol)
         new_quantity, new_avg_price = self.calculate_new_position(current_position, trade_quantity, price)
-
+        
         # Update position in Redis
         await self.account_client.set_position(account_id, symbol, new_quantity, new_avg_price)
 
@@ -158,8 +158,7 @@ class TradingService:
         await self.account_client.set_used_margin(account_id, used_margin)
 
         # Record trade in PostgreSQL
-        trade_id = await self._record_trade_in_postgres(account_id, symbol, side, quantity, price)
-
+        trade_id = await self._record_trade_in_postgres(account_id, symbol, side, quantity, price)        
         return True, "Trade executed successfully", trade_id
 
     async def get_account_positions(self, account_id: int) -> Dict[str, Any]:

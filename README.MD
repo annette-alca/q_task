@@ -21,7 +21,6 @@ This system was built following [these instructions](instructions.md).
 - **Liquidation**: When equity < maintenance margin
 
 ## Redis Data Structure
-
 ### AccountRedisClient
 ```
 balances -> hash: {account_id: balance}
@@ -76,7 +75,7 @@ poetry run python -m app.main
 
 ```
 
-5. **Run integration test (optional):**
+5. **Run integration test (optional):** This checklist validates the core functionality of the derivatives trading platform as specified in instructions.md. Each test verifies a key requirement: margin checks, trade execution, position tracking, P&L calculations, and liquidation detection.
 ```bash
 poetry run python test_integration.py
 ```
