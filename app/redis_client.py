@@ -138,24 +138,22 @@ class AccountRedisClient(BaseRedisClient):
         balance_data = await self.hgetall("balances")
         return [int(account_id) for account_id in balance_data.keys()]
 
-     # In trading service after each trade
-    async def _update_equity_in_redis(self, account_id: int):
-        equity = await self.calculate_equity(account_id)
+    async def set_equity(self, account_id: int, equity: Decimal):
+        '''Update equity, done after a trade is executed'''
         await self.account_client.set(f"account:{account_id}:equity", str(equity))
 
-    # Get equity from Redis (as required)
-    async def get_equity_from_redis(self, account_id: int) -> Decimal:
+
+    async def get_equity(self, account_id: int) -> Decimal:
         equity_str = await self.account_client.get(f"account:{account_id}:equity")
         return Decimal(equity_str) if equity_str else Decimal('0')
 
-    #Update used_margin in Redis:
-    # Calculate and store used margin
-    async def _update_used_margin_in_redis(self, account_id: int):
-        used_margin = await self.calculate_maintenance_margin(account_id)
+
+    async def set_used_margin(self, account_id: int, used_margin: Decimal):
+        '''Update used margin, done after a trade is executed'''
         await self.account_client.set(f"account:{account_id}:used_margin", str(used_margin))
 
-    # Get used margin from Redis
-    async def get_used_margin_from_redis(self, account_id: int) -> Decimal:
+
+    async def get_used_margin(self, account_id: int) -> Decimal:
         margin_str = await self.account_client.get(f"account:{account_id}:used_margin")
         return Decimal(margin_str) if margin_str else Decimal('0')
 
