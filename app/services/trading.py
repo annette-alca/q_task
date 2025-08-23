@@ -136,24 +136,22 @@ class TradingService:
         # Calculate trade details
         trade_quantity = quantity if side.upper() == "BUY" else -quantity
         
-        # Get current position and calculate new position
+        # Get current position and calculate new position, update in redis
         current_position = await self.account_client.get_position(account_id, symbol)
         new_quantity, new_avg_price = self.calculate_new_position(current_position, trade_quantity, price)
-        
-        # Update position in Redis
         await self.account_client.set_position(account_id, symbol, new_quantity, new_avg_price)
 
-        # Update balance
+        # Calculate new balance and update in redis
         current_balance = await self.account_client.get_balance(account_id)
         balance_change = -required_margin if side.upper() == "BUY" else required_margin
         new_balance = current_balance + balance_change
         await self.account_client.set_balance(account_id, new_balance)
 
-        # Update equity in Redis
+        # Calculate new equity and update in redis
         equity = await self.calculate_equity(account_id)
         await self.account_client.set_equity(account_id, equity)
 
-        # Update used margin in Redis
+        # Calculate new used margin and update in redis
         used_margin = await self.calculate_maintenance_margin(account_id)
         await self.account_client.set_used_margin(account_id, used_margin)
 
