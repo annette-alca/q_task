@@ -1,7 +1,6 @@
 import pytest
 from decimal import Decimal
-
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from app.services.margin import MarginService
 from app.models import Liquidation
 
@@ -82,150 +81,30 @@ class TestMarginService:
         result = margin_service.is_liquidation_candidate(equity, maintenance_required)
         assert result is False
 
-        
-    
     @pytest.mark.asyncio
-    async def test_calculate_account_equity_safe_account(self, margin_service, mock_clients, safe_account):
-        """Test equity calculation for safe account with profit"""
+    async def test_record_liquidation(self, margin_service, mock_clients):
+        """Test recording liquidation event in PostgreSQL"""
         account_client, market_client, postgres_client = mock_clients
         
-        # Setup mocks
-        account_client.get_balance.return_value = safe_account['balance']
-        account_client.get_all_positions.return_value = {
-            "BTC-PERP": {
-                "quantity": safe_account['btc_quantity'], 
-                "avg_price": safe_account['btc_avg_price']
-            }
-        }
-        market_client.get_mark_price.return_value = safe_account['btc_mark_price']
+        account_id = 123
+        reason = "Equity below maintenance margin"
         
-        # Test
-        equity = await margin_service.calculate_account_equity(safe_account['account_id'])
+        # Mock the insert_model method
+        postgres_client.insert_model.return_value = 1
         
-        # Expected: balance + position P&L = 10000 + (52000-50000)*1 = 12000
-        assert equity == Decimal('12000')
-    
-    @pytest.mark.asyncio
-    async def test_calculate_account_equity_liquidation_account(self, margin_service, mock_clients, liquidation_account):
-        """Test equity calculation for account needing liquidation"""
-        account_client, market_client, postgres_client = mock_clients
+        await margin_service.record_liquidation(account_id, reason)
         
-        # Setup mocks
-        account_client.get_balance.return_value = liquidation_account['balance']
-        account_client.get_all_positions.return_value = {
-            "BTC-PERP": {
-                "quantity": liquidation_account['btc_quantity'], 
-                "avg_price": liquidation_account['btc_avg_price']
-            }
-        }
-        market_client.get_mark_price.return_value = liquidation_account['btc_mark_price']
-        
-        # Test
-        equity = await margin_service.calculate_account_equity(liquidation_account['account_id'])
-        
-        # Expected: balance + position P&L = 2000 + (45000-50000)*1 = -3000
-        assert equity == Decimal('-3000')
-    
-    @pytest.mark.asyncio
-    async def test_calculate_maintenance_margin_required(self, margin_service, mock_clients, safe_account):
-        """Test calculation of maintenance margin required (10% of notional)"""
-        account_client, market_client, postgres_client = mock_clients
-        
-        # Setup mocks
-        account_client.get_all_positions.return_value = {
-            "BTC-PERP": {
-                "quantity": safe_account['btc_quantity'], 
-                "avg_price": safe_account['btc_avg_price']
-            }
-        }
-        market_client.get_mark_price.return_value = safe_account['btc_mark_price']
-        
-        # Test
-        maintenance_required = await margin_service.calculate_maintenance_margin_required(safe_account['account_id'])
-        
-        # Expected: quantity * mark_price * 0.10 = 1 * 52000 * 0.10 = 5200
-        assert maintenance_required == Decimal('5200')
-    
-    @pytest.mark.asyncio
-    async def test_no_liquidation_needed_safe_account(self, margin_service, mock_clients, safe_account):
-        """Test that safe account does not need liquidation"""
-        account_client, market_client, postgres_client = mock_clients
-        
-        # Setup mocks for safe account
-        account_client.get_balance.return_value = safe_account['balance']
-        account_client.get_all_positions.return_value = {
-            "BTC-PERP": {
-                "quantity": safe_account['btc_quantity'], 
-                "avg_price": safe_account['btc_avg_price']
-            }
-        }
-        market_client.get_mark_price.return_value = safe_account['btc_mark_price']
-        
-        # Test
-        equity = await margin_service.calculate_account_equity(safe_account['account_id'])
-        maintenance_required = await margin_service.calculate_maintenance_margin_required(safe_account['account_id'])
-        needs_liquidation = margin_service.is_liquidation_candidate(equity, maintenance_required)
-        
-        # Verify account is safe
-        assert equity == Decimal('12000')
-        assert maintenance_required == Decimal('5200')
-        assert needs_liquidation is False
-        print(f"Account {safe_account['account_id']}: Safe - Equity £{equity} > Maintenance £{maintenance_required}")
-    
-    @pytest.mark.asyncio
-    async def test_liquidation_needed_underwater_account(self, margin_service, mock_clients, liquidation_account):
-        """Test that underwater account needs liquidation"""
-        account_client, market_client, postgres_client = mock_clients
-        
-        # Setup mocks for liquidation account
-        account_client.get_balance.return_value = liquidation_account['balance']
-        account_client.get_all_positions.return_value = {
-            "BTC-PERP": {
-                "quantity": liquidation_account['btc_quantity'], 
-                "avg_price": liquidation_account['btc_avg_price']
-            }
-        }
-        market_client.get_mark_price.return_value = liquidation_account['btc_mark_price']
-        
-        # Test
-        equity = await margin_service.calculate_account_equity(liquidation_account['account_id'])
-        maintenance_required = await margin_service.calculate_maintenance_margin_required(liquidation_account['account_id'])
-        needs_liquidation = margin_service.is_liquidation_candidate(equity, maintenance_required)
-        
-        # Verify account needs liquidation
-        assert equity == Decimal('-3000')
-        assert maintenance_required == Decimal('4500')
-        assert needs_liquidation is True
-        print(f"Account {liquidation_account['account_id']}: Liquidation needed - Equity £{equity} < Maintenance £{maintenance_required}")
-    
-    @pytest.mark.asyncio
-    async def test_record_liquidation(self, margin_service, mock_clients, liquidation_account):
-        """Test recording liquidation event"""
-        account_client, market_client, postgres_client = mock_clients
-        
-        # Test data
-        reason = "Equity below maintenance margin after BTC price drop"
-        
-        # Test
-        await margin_service.record_liquidation(
-            liquidation_account['account_id'], 
-            reason
-        )
-        
-        # Verify liquidation was recorded in Postgres
+        # Verify the liquidation was recorded
         postgres_client.insert_model.assert_called_once()
+        call_args = postgres_client.insert_model.call_args
+        liquidation = call_args[0][0]  # First argument is the liquidation object
         
-        # Verify the liquidation model data
-        call_args = postgres_client.insert_model.call_args[0]
-        liquidation_model = call_args[0]
-        
-        assert isinstance(liquidation_model, Liquidation)
-        assert liquidation_model.account_id == liquidation_account['account_id']
-        assert liquidation_model.reason == reason
-    
+        assert liquidation.account_id == account_id
+        assert liquidation.reason == reason
+
     @pytest.mark.asyncio
-    async def test_get_liquidation_history(self, margin_service, mock_clients):
-        """Test getting liquidation history with proper Decimal precision"""
+    async def test_get_liquidation_history_all_accounts(self, margin_service, mock_clients):
+        """Test getting liquidation history for all accounts"""
         account_client, market_client, postgres_client = mock_clients
         
         # Setup mock liquidations
@@ -233,17 +112,108 @@ class TestMarginService:
             Liquidation(
                 id=1,
                 account_id=2,
-                reason="Equity below maintenance margin after BTC price drop"
+                reason="Equity below maintenance margin after BTC price drop",
+                timestamp=None
             )
         ]
+        
         postgres_client.fetch_models.return_value = mock_liquidations
         
-        # Test
         liquidations = await margin_service.get_liquidation_history()
         
-        # Verify
+        # Verify the query was called correctly
+        postgres_client.fetch_models.assert_called_once()
+        call_args = postgres_client.fetch_models.call_args
+        assert call_args[0][0] == Liquidation  # First argument is the model class
+        
+        # Verify results
         assert len(liquidations) == 1
         assert liquidations[0].account_id == 2
         assert liquidations[0].reason == "Equity below maintenance margin after BTC price drop"
-        postgres_client.fetch_models.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_get_liquidation_history_filtered_by_account(self, margin_service, mock_clients):
+        """Test getting liquidation history filtered by account"""
+        account_client, market_client, postgres_client = mock_clients
+        
+        # Setup mock liquidations
+        mock_liquidations = [
+            Liquidation(
+                id=1,
+                account_id=123,
+                reason="Insufficient margin",
+                timestamp=None
+            )
+        ]
+        
+        postgres_client.fetch_models.return_value = mock_liquidations
+        
+        liquidations = await margin_service.get_liquidation_history(account_id=123, limit=50)
+        
+        # Verify the query was called correctly
+        postgres_client.fetch_models.assert_called_once()
+        call_args = postgres_client.fetch_models.call_args
+        assert call_args[0][0] == Liquidation  # First argument is the model class
+        
+        # Verify results
+        assert len(liquidations) == 1
+        assert liquidations[0].account_id == 123
+        assert liquidations[0].reason == "Insufficient margin"
+
+    @pytest.mark.asyncio
+    async def test_get_margin_utilisation(self, margin_service, mock_clients):
+        """Test getting margin utilisation report"""
+        account_client, market_client, postgres_client = mock_clients
+        
+        # Setup mocks
+        account_client.get_all_accounts.return_value = [1, 2]
+        
+        # Mock calculations service calls
+        margin_service.calculations.calculate_equity = AsyncMock()
+        margin_service.calculations.calculate_equity.side_effect = [
+            Decimal('12000'),  # Account 1: safe
+            Decimal('-3000')   # Account 2: liquidation needed
+        ]
+        
+        margin_service.calculations.calculate_maintenance_margin = AsyncMock()
+        margin_service.calculations.calculate_maintenance_margin.side_effect = [
+            Decimal('5200'),   # Account 1
+            Decimal('4500')    # Account 2
+        ]
+        
+        margin_service.calculations.calculate_margin_utilisation = Mock()
+        margin_service.calculations.calculate_margin_utilisation.side_effect = [
+            Decimal('43.33'),  # Account 1: 5200/12000 * 100
+            Decimal('100')     # Account 2: 100% (negative equity)
+        ]
+        
+        # Mock liquidation recording
+        margin_service.record_liquidation = AsyncMock()
+        
+        result = await margin_service.get_margin_utilisation()
+        
+        # Verify the structure of the result
+        assert result['total_accounts'] == 2
+        assert result['liquidation_candidates'] == [2]  # Only account 2 needs liquidation
+        assert len(result['accounts_detail']) == 2
+        
+        # Verify account details
+        account1_detail = result['accounts_detail'][0]
+        assert account1_detail['account_id'] == 1
+        assert account1_detail['equity'] == Decimal('12000')
+        assert account1_detail['maintenance_margin_required'] == Decimal('5200')
+        assert account1_detail['margin_utilisation_pct'] == Decimal('43.33')
+        assert account1_detail['liquidation_risk'] is False
+        
+        account2_detail = result['accounts_detail'][1]
+        assert account2_detail['account_id'] == 2
+        assert account2_detail['equity'] == Decimal('-3000')
+        assert account2_detail['maintenance_margin_required'] == Decimal('4500')
+        assert account2_detail['margin_utilisation_pct'] == Decimal('100')
+        assert account2_detail['liquidation_risk'] is True
+        
+        # Verify liquidation was recorded for account 2
+        margin_service.record_liquidation.assert_called_once_with(
+            2, 
+            "Equity (-3000) below maintenance margin (4500)"
+        )

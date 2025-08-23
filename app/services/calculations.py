@@ -53,6 +53,10 @@ class CalculationsService:
 
     def calculate_margin_utilisation(self, equity: Decimal, maintenance_required: Decimal) -> Decimal:
         """Calculate margin utilisation percentage (pure function)"""
+        if maintenance_required == 0:
+            return Decimal('0')
+        if equity == 0:
+            return Decimal('Infinity')
         return (maintenance_required / equity * 100) #can be over 100%
 
     def calculate_new_position(self, current_position: Optional[Dict[str, Decimal]], 
