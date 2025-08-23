@@ -53,10 +53,6 @@ async def lifespan(app: FastAPI):
     # Initialise API services with dependency injection
     initialise_services(trading_service, margin_service, market_client)
     
-    # Set some test data
-    await account_client.set_balance(1, 10000.0)
-    await account_client.set_balance(2, 5000.0)
-    await market_client.set_mark_price("BTC-PERP", 50000.0)
     
     print("Trading platform started successfully!")
     
