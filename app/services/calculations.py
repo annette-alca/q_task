@@ -3,7 +3,8 @@ from typing import Dict, Optional, Tuple, Any, List
 from app.redis_client import AccountRedisClient, MarketRedisClient
 
 class CalculationsService:
-    """Shared calculation service for equity, margin, and position calculations"""
+    """Shared calculation service for Trading and Margin Services. 
+    Calculates equity, margin, and position calculations"""
     
     def __init__(self, account_client: AccountRedisClient, market_client: MarketRedisClient):
         self.account_client = account_client
@@ -52,7 +53,7 @@ class CalculationsService:
 
     def calculate_margin_utilisation(self, equity: Decimal, maintenance_required: Decimal) -> Decimal:
         """Calculate margin utilisation percentage (pure function)"""
-        return (maintenance_required / equity * 100) if equity > 0 else Decimal('100')
+        return (maintenance_required / equity * 100) #can be over 100%
 
     def calculate_new_position(self, current_position: Optional[Dict[str, Decimal]], 
                              trade_quantity: Decimal, trade_price: Decimal) -> Tuple[Decimal, Decimal]:
