@@ -363,7 +363,7 @@ class TradingSystemIntegrationTest:
                 # Get actual equity from trading service for comparison
                 from app.services.trading import TradingService
                 trading_service = TradingService(self.account_client, self.market_client, self.postgres_client)
-                actual_equity = await trading_service.calculate_equity(3456)
+                actual_equity = await trading_service.calculations.calculate_equity(3456)
                 print(f"   Trading Service Equity: {actual_equity} USDT")
                 
                 # Validate calculations
