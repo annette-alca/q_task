@@ -148,9 +148,11 @@ q_test2/
 │   ├── redis_client.py      # Async Redis clients (Account & Market)
 │   └── services/
 │       ├── __init__.py
+│       ├── calculations.py  # Shared calculation service (equity, margin, positions)
 │       ├── trading.py       # Trading service (pre-trade checks, execution)
 │       └── margin.py        # Margin service (utilisation, liquidation)
 ├── tests/
+│   ├── test_calculations_service.py
 │   ├── test_trading_service.py
 │   ├── test_margin_service.py
 │   ├── test_redis_clients.py
@@ -169,16 +171,16 @@ q_test2/
 
 ### Clean Architecture Implementation
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌───────────────────┐
-│   API Layer     │───▶│  Services Layer  │───▶│ Data Access Layer │
-│ (FastAPI)       │    │ (Business Logic) │    │ (Redis/Postgres)  │
-│                 │    │                  │    │                   │
-│ • Request/      │    │ • TradingService │    │ • AccountRedis    │
-│   Response      │    │ • MarginService  │    │   Client          │
-│ • Validation    │    │ • Pure Functions │    │ • MarketRedis     │
-│ • Error Handling│    │                  │    │   Client          │
-│                 │    │                  │    │ • PostgresClient  │
-└─────────────────┘    └──────────────────┘    └───────────────────┘
+┌─────────────────┐    ┌────────────────────┐    ┌───────────────────┐
+│   API Layer     │───▶│  Services Layer    │───▶│ Data Access Layer │
+│ (FastAPI)       │    │ (Business Logic)   │    │ (Redis/Postgres)  │
+│                 │    │                    │    │                   │
+│ • Request/      │    │ • Calculations     │    │ • AccountRedis    │
+│   Response      │    │   Service          │    │   Client          │
+│ • Validation    │    │ • TradingService   │    │ • MarketRedis     │
+│ • Error Handling│    │ • MarginService    │    │   Client          │
+│                 │    │ • Pure Functions   │    │ • PostgresClient  │
+└─────────────────┘    └────────────────────┘    └───────────────────┘
 ```
 
 ### Key Design Principles
