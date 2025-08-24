@@ -60,7 +60,51 @@ def calculations_service(mock_clients):
     account_client, market_client = mock_clients
     return CalculationsService(account_client, market_client)
 
-class TestCalculationsService:
+
+class TestEquityCalculations:
+    """Test equity calculation functionality"""
+    
+    @pytest.mark.asyncio
+    async def test_calculate_equity_no_positions(self, calculations_service, mock_clients, account_no_btc):
+        """Test equity calculation for account with no positions"""
+        account_client, market_client = mock_clients
+        
+        # Setup mocks
+        account_client.get_balance.return_value = account_no_btc['balance']
+        account_client.get_all_positions.return_value = account_no_btc['positions']
+        
+        result = await calculations_service.calculate_equity(account_no_btc['account_id'])
+        assert result == account_no_btc['expected_equity']
+
+    @pytest.mark.asyncio
+    async def test_calculate_equity_with_profit(self, calculations_service, mock_clients, account_low_margin_util):
+        """Test equity calculation for account with profitable position"""
+        account_client, market_client = mock_clients
+        
+        # Setup mocks
+        account_client.get_balance.return_value = account_low_margin_util['balance']
+        account_client.get_all_positions.return_value = account_low_margin_util['positions']
+        market_client.get_mark_price.return_value = account_low_margin_util['btc_mark_price']
+        
+        result = await calculations_service.calculate_equity(account_low_margin_util['account_id'])
+        assert result == account_low_margin_util['expected_equity']
+
+    @pytest.mark.asyncio
+    async def test_calculate_equity_with_loss(self, calculations_service, mock_clients, account_high_margin_util):
+        """Test equity calculation for account with losing position"""
+        account_client, market_client = mock_clients
+        
+        # Setup mocks
+        account_client.get_balance.return_value = account_high_margin_util['balance']
+        account_client.get_all_positions.return_value = account_high_margin_util['positions']
+        market_client.get_mark_price.return_value = account_high_margin_util['btc_mark_price']
+        
+        result = await calculations_service.calculate_equity(account_high_margin_util['account_id'])
+        assert result == account_high_margin_util['expected_equity']
+
+
+class TestMarginCalculations:
+    """Test margin calculation functionality"""
     
     def test_calculate_initial_margin_required(self, calculations_service):
         """Test initial margin calculation (20% of notional)"""
@@ -73,6 +117,33 @@ class TestCalculationsService:
         result = calculations_service.calculate_initial_margin_required(quantity, price)
         assert result == expected
 
+    @pytest.mark.asyncio
+    async def test_calculate_maintenance_margin_no_positions(self, calculations_service, mock_clients, account_no_btc):
+        """Test maintenance margin calculation for account with no positions"""
+        account_client, market_client = mock_clients
+        
+        # Setup mocks
+        account_client.get_all_positions.return_value = account_no_btc['positions']
+        
+        result = await calculations_service.calculate_maintenance_margin(account_no_btc['account_id'])
+        assert result == Decimal('0')
+
+    @pytest.mark.asyncio
+    async def test_calculate_maintenance_margin_with_position(self, calculations_service, mock_clients, account_low_margin_util):
+        """Test maintenance margin calculation for account with position"""
+        account_client, market_client = mock_clients
+        
+        # Setup mocks
+        account_client.get_all_positions.return_value = account_low_margin_util['positions']
+        market_client.get_mark_price.return_value = account_low_margin_util['btc_mark_price']
+        
+        result = await calculations_service.calculate_maintenance_margin(account_low_margin_util['account_id'])
+        assert result == account_low_margin_util['expected_maintenance']
+
+
+class TestMarginUtilisationCalculations:
+    """Test margin utilisation calculation functionality"""
+    
     def test_calculate_margin_utilisation(self, calculations_service):
         """Test margin utilisation calculation"""
         equity = Decimal('12000')
@@ -87,12 +158,16 @@ class TestCalculationsService:
         """Test margin utilisation calculation with zero equity"""
         equity = Decimal('0')
         maintenance_required = Decimal('5000')
-        # Should return 100% when equity is 0
+        # Should return Infinity when equity is 0
         expected = Decimal('Infinity')
         
         result = calculations_service.calculate_margin_utilisation(equity, maintenance_required)
         assert result == expected
 
+
+class TestPositionCalculations:
+    """Test position calculation functionality"""
+    
     def test_calculate_new_position_no_current_position(self, calculations_service):
         """Test new position calculation when no current position exists"""
         current_position = None
@@ -159,67 +234,10 @@ class TestCalculationsService:
         assert new_quantity == Decimal('0')
         assert new_avg_price == Decimal('0')
 
-    @pytest.mark.asyncio
-    async def test_calculate_equity_no_positions(self, calculations_service, mock_clients, account_no_btc):
-        """Test equity calculation for account with no positions"""
-        account_client, market_client = mock_clients
-        
-        # Setup mocks
-        account_client.get_balance.return_value = account_no_btc['balance']
-        account_client.get_all_positions.return_value = account_no_btc['positions']
-        
-        result = await calculations_service.calculate_equity(account_no_btc['account_id'])
-        assert result == account_no_btc['expected_equity']
 
-    @pytest.mark.asyncio
-    async def test_calculate_equity_with_profit(self, calculations_service, mock_clients, account_low_margin_util):
-        """Test equity calculation for account with profitable position"""
-        account_client, market_client = mock_clients
-        
-        # Setup mocks
-        account_client.get_balance.return_value = account_low_margin_util['balance']
-        account_client.get_all_positions.return_value = account_low_margin_util['positions']
-        market_client.get_mark_price.return_value = account_low_margin_util['btc_mark_price']
-        
-        result = await calculations_service.calculate_equity(account_low_margin_util['account_id'])
-        assert result == account_low_margin_util['expected_equity']
-
-    @pytest.mark.asyncio
-    async def test_calculate_equity_with_loss(self, calculations_service, mock_clients, account_high_margin_util):
-        """Test equity calculation for account with losing position"""
-        account_client, market_client = mock_clients
-        
-        # Setup mocks
-        account_client.get_balance.return_value = account_high_margin_util['balance']
-        account_client.get_all_positions.return_value = account_high_margin_util['positions']
-        market_client.get_mark_price.return_value = account_high_margin_util['btc_mark_price']
-        
-        result = await calculations_service.calculate_equity(account_high_margin_util['account_id'])
-        assert result == account_high_margin_util['expected_equity']
-
-    @pytest.mark.asyncio
-    async def test_calculate_maintenance_margin_no_positions(self, calculations_service, mock_clients, account_no_btc):
-        """Test maintenance margin calculation for account with no positions"""
-        account_client, market_client = mock_clients
-        
-        # Setup mocks
-        account_client.get_all_positions.return_value = account_no_btc['positions']
-        
-        result = await calculations_service.calculate_maintenance_margin(account_no_btc['account_id'])
-        assert result == Decimal('0')
-
-    @pytest.mark.asyncio
-    async def test_calculate_maintenance_margin_with_position(self, calculations_service, mock_clients, account_low_margin_util):
-        """Test maintenance margin calculation for account with position"""
-        account_client, market_client = mock_clients
-        
-        # Setup mocks
-        account_client.get_all_positions.return_value = account_low_margin_util['positions']
-        market_client.get_mark_price.return_value = account_low_margin_util['btc_mark_price']
-        
-        result = await calculations_service.calculate_maintenance_margin(account_low_margin_util['account_id'])
-        assert result == account_low_margin_util['expected_maintenance']
-
+class TestPositionReporting:
+    """Test position reporting functionality"""
+    
     @pytest.mark.asyncio
     async def test_get_account_positions(self, calculations_service, mock_clients, account_low_margin_util):
         """Test get account positions with P&L calculation"""

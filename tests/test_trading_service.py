@@ -82,6 +82,7 @@ class TestPreTradeCheck:
 
         assert success is True
         assert message == "Trade approved"
+        assert required_margin == Decimal('10000')
 
     @pytest.mark.asyncio
     async def test_cannot_buy_second_btc_insufficient_free_margin(self, trading_service, mock_clients, mock_account_1btc):
@@ -104,6 +105,7 @@ class TestPreTradeCheck:
         
         assert success is False
         assert "Insufficient equity" in message
+        assert required_margin == Decimal('9000')
         # Current free margin: 0 < Required margin: 9000 ✗
     
     @pytest.mark.asyncio
